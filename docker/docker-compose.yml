@@ -1,22 +1,5 @@
 version: '3.4'
 services:
-  test_studsched:
-    build:
-      context: ../
-      dockerfile: ./docker/Dockerfile.local
-      args:
-        DB_CONNECTION: "postgresql://postgres:mysecretpassword@db:5432/postgres"
-        MODE: "TEST"
-    entrypoint: >
-      sh -c "sleep 5 && make test"
-    volumes:
-      - ../:/app/
-    environment:
-      - PYTHONPATH=/app/studsched
-    links:
-      - "db:db"
-    depends_on:
-      - db
   db:
     image: postgres:latest
     environment:
@@ -31,7 +14,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  studsched:
+
+  backend:
     build:
       context: ../
       dockerfile: ./docker/Dockerfile.local
@@ -41,7 +25,7 @@ services:
     entrypoint: >
       sh -c "sleep 5 && python ./studsched/main.py"
     volumes:
-      - ../:/app/
+      - ../:/app/ 
     environment:
       - PYTHONPATH=/app/studsched
     ports:
@@ -55,3 +39,17 @@ services:
       - "db:db"
     depends_on:
       - db
+
+  frontend:
+    build:
+      context: ../
+      dockerfile: ./docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
