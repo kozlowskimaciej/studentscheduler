@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field  # type: ignore
 from datetime import datetime
 from enum import IntEnum, auto
+from typing import Optional
 
 
 class VersionResponse(BaseModel):
@@ -18,14 +19,33 @@ class TaskType(IntEnum):
 
 
 class Task(BaseModel):
-    """Single task that is needed to complete a subject"""
+    """Subject task that helps to complete a subject"""
 
     max_points: int
-    result: int
+    result: Optional[int]
     deadline: datetime
     task_type: TaskType
-    ended: bool
-    description: str
+    ended: bool = False
+    description: str = ""
+
+
+class RequirementType(IntEnum):
+    TOTAL = auto()
+    SEPARATELY = auto()
+
+
+class ThresholdType(IntEnum):
+    PERCENT = auto()
+    POINTS = auto()
+
+
+class Requirement(BaseModel):
+    """Subject requirement that is needed to pass"""
+
+    task_type: TaskType
+    requirement_type: RequirementType
+    threshold: int
+    threshold_type: ThresholdType
 
 
 class SubjectStatus(IntEnum):
@@ -43,3 +63,4 @@ class SubjectResponse(BaseModel):
     name: str
     status: SubjectStatus
     tasks: list[Task]
+    requirements: list[Requirement]
