@@ -4,8 +4,8 @@ from typing import Any
 from fastapi import APIRouter
 from ..schemas.base import (
     VersionResponse,
-    SubjectListResponse,
     SubjectResponse,
+    SubjectStatus,
 )
 from ..version import __version__
 
@@ -23,8 +23,12 @@ async def version() -> Any:
     return VersionResponse(version=__version__)
 
 
-@base_router.get("/subjects", response_model=SubjectListResponse)
+@base_router.get("/subjects", response_model=list[SubjectResponse])
 async def henlo() -> Any:
     subjects = []
-    subjects.append(SubjectResponse(id="1", name="ZPRP"))
-    return SubjectListResponse(subjects=subjects)
+    subjects.append(
+        SubjectResponse(
+            id="1", name="ZPRP", status=SubjectStatus.PASSED, tasks=[]
+        )
+    )
+    return subjects
