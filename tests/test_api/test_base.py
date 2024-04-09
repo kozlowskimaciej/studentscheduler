@@ -39,3 +39,27 @@ def test_subjects(test_client):
     assert requirement["requirement_type"] == RequirementType.TOTAL
     assert requirement["threshold"] == 5
     assert requirement["threshold_type"] == ThresholdType.POINTS
+
+
+def test_add_requirements(test_client):
+    response = test_client.post(
+        "/api/v1/subjects/1/requirements",
+        json=[
+            {
+                "task_type": TaskType.LAB,
+                "requirement_type": RequirementType.TOTAL,
+                "threshold": 5,
+                "threshold_type": ThresholdType.POINTS,
+            }
+        ],
+    )
+    assert response.status_code == 200
+    res = response.json()
+
+    assert len(res) == 1
+
+    requirement = res[0]
+    assert requirement["task_type"] == TaskType.LAB
+    assert requirement["requirement_type"] == RequirementType.TOTAL
+    assert requirement["threshold"] == 5
+    assert requirement["threshold_type"] == ThresholdType.POINTS

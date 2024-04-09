@@ -15,7 +15,7 @@ class VersionResponse(BaseModel):
 class TaskType(IntEnum):
     LAB = auto()
     EXAM = auto()
-    KOL = auto()
+    COLL = auto()
 
 
 class Task(BaseModel):
