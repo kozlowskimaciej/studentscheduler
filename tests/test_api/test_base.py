@@ -63,3 +63,4 @@ def test_add_requirements(test_client):
     assert requirement["requirement_type"] == RequirementType.TOTAL
     assert requirement["threshold"] == 5
     assert requirement["threshold_type"] == ThresholdType.POINTS
+    assert requirement["id"]

@@ -39,13 +39,24 @@ class ThresholdType(IntEnum):
     POINTS = auto()
 
 
-class Requirement(BaseModel):
-    """Subject requirement that is needed to pass"""
-
+class RequirementBase(BaseModel):
     task_type: TaskType
     requirement_type: RequirementType
     threshold: int
     threshold_type: ThresholdType
+
+
+class RequirementCreate(RequirementBase):
+    """Model for creating subject requirement"""
+
+
+class Requirement(RequirementBase):
+    """Requirement that is needed to pass a subject"""
+
+    id: int
+
+    class Config:
+        orm_mode = True
 
 
 class SubjectStatus(IntEnum):
