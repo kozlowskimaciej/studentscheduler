@@ -56,3 +56,14 @@ async def subjects() -> Any:
         )
     ]
     return subjects
+
+
+@base_router.post("/subjects/{subject_id}/requirements")
+async def add_requirements(
+    requirements: list[Requirement],
+    subject_id: int,
+) -> list[Requirement]:
+    """Adds new requirement for a given subject"""
+
+    # Do some db staff
+    return requirements  # Return newly created requirement
