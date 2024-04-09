@@ -1,47 +1,32 @@
 version: '3.4'
 services:
-  test_studsched:
-    build:
-      context: ../
-      dockerfile: ./docker/Dockerfile.local
-      args:
-        DB_CONNECTION: "postgresql://postgres:mysecretpassword@db:5432/postgres"
-        MODE: "TEST"
-    entrypoint: >
-      sh -c "sleep 5 && make test"
-    volumes:
-      - ../:/app/
-    environment:
-      - PYTHONPATH=/app/studsched
-    links:
-      - "db:db"
-    depends_on:
-      - db
   db:
     image: postgres:latest
     environment:
-      POSTGRES_PASSWORD: "mysecretpassword"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_USER: "${POSTGRES_USER}"
     ports:
       - "5432:5432"
     expose:
       - "5432"
     
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
-  studsched:
+
+  backend:
     build:
       context: ../
-      dockerfile: ./docker/Dockerfile.local
+      dockerfile: ./docker/Dockerfile.backend
       args:
-        DB_CONNECTION: "postgresql://postgres:mysecretpassword@db:5432/postgres"
+        DB_CONNECTION: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
         MODE: "TEST"
     entrypoint: >
       sh -c "sleep 5 && python ./studsched/main.py"
     volumes:
-      - ../:/app/
+      - ../:/app/ 
     environment:
       - PYTHONPATH=/app/studsched
     ports:
@@ -55,3 +40,19 @@ services:
       - "db:db"
     depends_on:
       - db
+
+  # frontend:
+  #   build:
+  #     context: ../
+  #     dockerfile: ./docker/Dockerfile.frontend
+  #     args:
+  #       REACT_PORT: "${REACT_PORT}"
+  #   ports:
+  #     - "${REACT_PORT}:${REACT_PORT}"
+  #   depends_on:
+  #     - backend
+
+  # redis:
+  #   image: redis
+  #   ports:
+  #     - "6379:6379"
