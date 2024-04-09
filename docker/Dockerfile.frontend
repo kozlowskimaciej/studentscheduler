@@ -1,12 +1,14 @@
 FROM node:14-alpine
 
+ARG REACT_PORT
+
 WORKDIR /frontend
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
-ENV PORT=3000
+ENV PORT=${REACT_PORT}
 ENV REACT_APP_SERVER_URL=https://localhost:8000
 ENV HOST=0.0.0.0
-EXPOSE 3000
+EXPOSE ${REACT_PORT}
 CMD ["npm", "start"]
