@@ -30,7 +30,7 @@ async def version() -> Any:
 
 
 @base_router.get("/subjects", response_model=list[SubjectResponse])
-async def henlo() -> Any:
+async def subjects() -> Any:
     tasks = [
         Task(
             max_points=10,
