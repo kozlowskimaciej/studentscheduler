@@ -54,5 +54,6 @@ backup/*
 *.png
 
 venv
+.vscode
 
 !.keep
