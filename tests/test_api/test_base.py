@@ -1,3 +1,5 @@
+from fastapi.testclient import TestClient
+
 from studsched.app.version import __version__
 from studsched.app.schemas.base import (
     SubjectStatus,
@@ -7,13 +9,13 @@ from studsched.app.schemas.base import (
 )
 
 
-def test_get_version(test_client):
+def test_get_version(test_client: TestClient):
     response = test_client.get("/api/v1/version")
     assert response.status_code == 200
     assert response.json() == {"version": __version__}
 
 
-def test_subjects(test_client):
+def test_subjects(test_client: TestClient):
     response = test_client.get("/api/v1/subjects")
     assert response.status_code == 200
     res = response.json()
@@ -41,7 +43,7 @@ def test_subjects(test_client):
     assert requirement["threshold_type"] == ThresholdType.POINTS
 
 
-def test_add_requirements(test_client):
+def test_add_requirements(test_client: TestClient):
     response = test_client.post(
         "/api/v1/subjects/1/requirements",
         json=[

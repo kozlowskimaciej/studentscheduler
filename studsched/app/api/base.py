@@ -81,6 +81,6 @@ async def add_requirements(
     """Adds new requirement for a given subject"""
 
     return [
-        queries.add_requirement(db, requirement)
+        queries.add_requirement(db, requirement, subject_id)
         for requirement in requirements
     ]
