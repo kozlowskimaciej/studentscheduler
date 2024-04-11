@@ -1,5 +1,5 @@
 version: '3.4'
-name: student-scheduler
+name: student-scheduler-test
 
 services:
   db:
@@ -12,8 +12,6 @@ services:
       - "${DB_PORT}:${DB_PORT}"
     expose:
       - "${DB_PORT}"
-    volumes:
-      - dbdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}"]
       interval: 10s
@@ -29,7 +27,7 @@ services:
         MODE: ${MODE}
     container_name: ${BACKEND_CONTAINER_NAME}
     entrypoint: >
-      sh -c "sleep 5 && python ./studsched/main.py"
+      sh -c "sleep 5 && make test"
     volumes:
       - ../:/app/
     environment:
@@ -61,7 +59,3 @@ services:
   #   image: redis
   #   ports:
   #     - "6379:6379"
-
-
-volumes:
-  dbdata:
