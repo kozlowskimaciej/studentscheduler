@@ -32,7 +32,7 @@ if [ "$command" = "down" ]; then
     echo "Running docker-compose down -v"
     $docker_command down -v
 elif [ "$command" = "run" ]; then
-    if [ "$env" = "test"]; then
+    if [ "$env" = "test" ]; then
         echo "STARTING TEST ENVIRONMENT"
         $docker_command run backend
     else
