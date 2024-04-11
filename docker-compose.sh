@@ -26,7 +26,13 @@ if [ ! -f "./.env.$env" ]; then
     exit 1
 fi
 
-docker_command="docker compose --env-file ./.env.$env -f ./docker/docker-compose.yml"
+if [ "$env" = "test" ]; then
+    docker_file="./docker/docker-compose-test.yml"
+else
+    docker_file="./docker/docker-compose.yml"
+fi
+
+docker_command="docker compose --env-file ./.env.$env -f $docker_file"
 
 if [ "$command" = "down" ]; then
     echo "Running docker-compose down -v"
@@ -34,7 +40,8 @@ if [ "$command" = "down" ]; then
 elif [ "$command" = "run" ]; then
     if [ "$env" = "test" ]; then
         echo "STARTING TEST ENVIRONMENT"
-        $docker_command run backend
+        $docker_command run --rm backend
+        $docker_command down -v
     else
         echo "STARTING DEV ENVIRONMENT"
         $docker_command up 
@@ -46,6 +53,14 @@ elif [ "$command" = "build"  ]; then
     else
         echo "Building the docker images for $env environment."
         $docker_command build
+    fi
+elif [ "$command" = "flush"  ]; then
+    if [ "$env" = "dev" ]; then
+        echo "Flushing the dev database"
+        docker rm db
+        docker volume rm student-scheduler_dbdata
+    else
+        echo "Flush command is only applicable for dev environment."
     fi
 else
     echo "Invalid command. Please provide a valid command (run, build, down, clean)."
