@@ -1,5 +1,8 @@
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
+from studsched.main import app
+from studsched.app.api.base import get_db
 from studsched.app.version import __version__
 from studsched.app.schemas.base import (
     SubjectStatus,
@@ -15,7 +18,16 @@ def test_get_version(test_client: TestClient):
     assert response.json() == {"version": __version__}
 
 
-def test_subjects(test_client: TestClient):
+def test_subjects_empty(test_client: TestClient):
+    response = test_client.get("/api/v1/subjects")
+    assert response.status_code == 200
+    res = response.json()
+    assert len(res) == 0
+
+
+def test_subjects(test_client: TestClient, filled_db: Session):
+    app.dependency_overrides[get_db] = filled_db
+
     response = test_client.get("/api/v1/subjects")
     assert response.status_code == 200
     res = response.json()
@@ -23,18 +35,9 @@ def test_subjects(test_client: TestClient):
 
     subject = res[0]
     assert subject["id"] == "1"
-    assert subject["name"] == "ZPRP"
-    assert subject["status"] == SubjectStatus.PASSED
-    assert len(subject["tasks"]) == 1
+    assert subject["name"] == "Subject"
+    assert subject["status"] == SubjectStatus.IN_PROGRESS
     assert len(subject["requirements"]) == 1
-
-    task = subject["tasks"][0]
-    assert task["max_points"] == 10
-    assert task["result"] is None
-    assert task["deadline"] == "2002-01-27T01:00:00"
-    assert task["task_type"] == TaskType.LAB
-    assert not task["ended"]
-    assert task["description"] == ""
 
     requirement = subject["requirements"][0]
     assert requirement["task_type"] == TaskType.LAB
@@ -43,26 +46,33 @@ def test_subjects(test_client: TestClient):
     assert requirement["threshold_type"] == ThresholdType.POINTS
 
 
-def test_add_requirements(test_client: TestClient):
+def test_add_requirements(test_client: TestClient, filled_db: Session):
+    app.dependency_overrides[get_db] = filled_db
+
     response = test_client.post(
         "/api/v1/subjects/1/requirements",
         json=[
             {
-                "task_type": TaskType.LAB,
-                "requirement_type": RequirementType.TOTAL,
-                "threshold": 5,
-                "threshold_type": ThresholdType.POINTS,
+                "task_type": TaskType.EXAM,
+                "requirement_type": RequirementType.SEPARATELY,
+                "threshold": 50,
+                "threshold_type": ThresholdType.PERCENT,
             }
         ],
     )
     assert response.status_code == 200
+
+    response = test_client.get("/api/v1/subjects")
+    assert response.status_code == 200
     res = response.json()
 
     assert len(res) == 1
+    subject = res[0]
+    assert len(subject["requirements"]) == 2
 
-    requirement = res[0]
-    assert requirement["task_type"] == TaskType.LAB
-    assert requirement["requirement_type"] == RequirementType.TOTAL
-    assert requirement["threshold"] == 5
-    assert requirement["threshold_type"] == ThresholdType.POINTS
+    requirement = subject["requirements"][1]
+    assert requirement["task_type"] == TaskType.EXAM
+    assert requirement["requirement_type"] == RequirementType.SEPARATELY
+    assert requirement["threshold"] == 50
+    assert requirement["threshold_type"] == ThresholdType.PERCENT
     assert requirement["id"]
