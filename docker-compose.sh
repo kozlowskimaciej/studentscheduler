@@ -1,32 +1,69 @@
 #!/bin/sh
 
-while getopts e: flag
-do
-    case "${flag}" in
-        e) env=${OPTARG};;
-    esac
-done
+command=$1
+env=$2
 
-shift $((OPTIND -1))
-
-if [ -z "$env" ]; then
-    echo "No environment provided. Defaulting to dev."
-    env="dev"
-fi
-
-if [ ! -f "./.env.$env" ]; then
-    echo "The file .env.$env does not exist."
-    exit 1
-fi
-
-if [ "$1" = "clean" ]; then
+if [ "$command" = "clean" ]; then
     echo "In clean mode."
     docker container prune -f
     docker rmi $(docker images --filter "dangling=true" -q --no-trunc)
-elif [ "$1" = "down" ]; then
-    echo "Running docker-compose down -v"
-    docker-compose --env-file ./.env.$env -f ./docker/docker-compose.yml down -v
+    exit 0
+fi
+
+if [ -z "$env" ]; then
+    echo "No environment provided. Please provide a valid environment (dev, prod, test)."
+    echo "Usage: ./docker-compose.sh [command] [env]"
+    exit 1
+fi
+
+if [ "$env" != "dev" ] && [ "$env" != "test" ] && [ "$env" != "prod" ]; then
+    echo "Invalid environment provided. Must be 'dev', 'test', or 'prod'."
+    exit 1
+fi
+
+if [ ! -f "./.env.$env" ]; then
+    echo "The config file .env.$env does not exist."
+    exit 1
+fi
+
+if [ "$env" = "test" ]; then
+    docker_file="./docker/docker-compose-test.yml"
 else
-    echo "Running docker-compose with env file .env.$env"
-    docker-compose --env-file ./.env.$env -f ./docker/docker-compose.yml up ${@:2}
+    docker_file="./docker/docker-compose.yml"
+fi
+
+docker_command="docker compose --env-file ./.env.$env -f $docker_file"
+
+if [ "$command" = "down" ]; then
+    echo "Running docker-compose down -v"
+    $docker_command down -v
+elif [ "$command" = "run" ]; then
+    if [ "$env" = "test" ]; then
+        echo "STARTING TEST ENVIRONMENT"
+        $docker_command run --rm backend
+        $docker_command down -v
+    else
+        echo "STARTING DEV ENVIRONMENT"
+        $docker_command up 
+    fi
+elif [ "$command" = "build"  ]; then
+    if [ "$env" = "test" ]; then
+        echo "Building the test docker image"
+        $docker_command build backend
+    else
+        echo "Building the docker images for $env environment."
+        $docker_command build
+    fi
+elif [ "$command" = "flush"  ]; then
+    if [ "$env" = "dev" ]; then
+        echo "Flushing the dev database"
+        docker rm db
+        docker volume rm student-scheduler_dbdata
+    else
+        echo "Flush command is only applicable for dev environment."
+    fi
+else
+    echo "Invalid command. Please provide a valid command (run, build, down, clean)."
+    echo "Usage: ./docker-compose.sh [command] [env]"
+    exit 1
 fi
