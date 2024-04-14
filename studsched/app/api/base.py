@@ -1,7 +1,13 @@
 """Endpoints for getting version information."""
 
 from typing import Any
-from fastapi import APIRouter
+from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
+from datetime import datetime
+
+from ..db.queries import queries
+from ..db.session import SessionLocal
+from ..version import __version__
 from ..schemas.base import (
     VersionResponse,
     SubjectResponse,
@@ -9,11 +15,10 @@ from ..schemas.base import (
     Task,
     TaskType,
     Requirement,
+    RequirementCreate,
     RequirementType,
     ThresholdType,
 )
-from ..version import __version__
-from datetime import datetime
 
 base_router = APIRouter()
 
@@ -40,6 +45,7 @@ async def subjects() -> Any:
     ]
     requirements = [
         Requirement(
+            id=0,
             task_type=TaskType.LAB,
             requirement_type=RequirementType.TOTAL,
             threshold=5,
@@ -56,3 +62,25 @@ async def subjects() -> Any:
         )
     ]
     return subjects
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@base_router.post("/subjects/{subject_id}/requirements")
+async def add_requirements(
+    requirements: list[RequirementCreate],
+    subject_id: int,
+    db: Session = Depends(get_db),
+):
+    """Adds new requirement for a given subject"""
+
+    return [
+        queries.add_requirement(db, requirement, subject_id)
+        for requirement in requirements
+    ]
