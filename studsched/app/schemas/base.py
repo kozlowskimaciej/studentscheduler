@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field  # type: ignore
 from datetime import datetime
-from enum import IntEnum, auto
+from enum import StrEnum, auto
 from typing import Optional
 
 
@@ -12,7 +12,7 @@ class VersionResponse(BaseModel):
     version: str = Field(..., example="1.0.0")
 
 
-class TaskType(IntEnum):
+class TaskType(StrEnum):
     LAB = auto()
     EXAM = auto()
     COLL = auto()
@@ -29,12 +29,12 @@ class Task(BaseModel):
     description: str = ""
 
 
-class RequirementType(IntEnum):
+class RequirementType(StrEnum):
     TOTAL = auto()
     SEPARATELY = auto()
 
 
-class ThresholdType(IntEnum):
+class ThresholdType(StrEnum):
     PERCENT = auto()
     POINTS = auto()
 
@@ -59,7 +59,7 @@ class Requirement(RequirementBase):
         orm_mode = True
 
 
-class SubjectStatus(IntEnum):
+class SubjectStatus(StrEnum):
     """Status of subject completion"""
 
     PASSED = auto()
