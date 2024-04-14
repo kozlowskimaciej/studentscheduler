@@ -1,11 +1,11 @@
-FROM node:14-alpine
+FROM node:21-alpine
 
 ARG REACT_PORT
 
 WORKDIR /frontend
-COPY package*.json ./
+COPY frontend/package*.json /frontend
 RUN npm install
-COPY . .
+COPY frontend/. /frontend
 RUN npm run build
 ENV PORT=${REACT_PORT}
 ENV REACT_APP_SERVER_URL=https://localhost:8000
