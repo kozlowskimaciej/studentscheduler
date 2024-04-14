@@ -6,6 +6,7 @@ from .base import Settings, LoggingConfig
 
 class SettingsTest(Settings):
     DEBUG = False
+    LOAD_EXAMPLE_DATA = False
     LOGGING_CONFIG: LoggingConfig = {
         "version": 1,
         "disable_existing_loggers": False,
