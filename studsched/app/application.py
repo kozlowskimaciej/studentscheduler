@@ -4,17 +4,28 @@ import logging.config
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from sqlalchemy import text
 from .api import api_router
 from .configs import get_settings
 from .db import Base, engine
 from .events import startup_handler, shutdown_handler
 from .middlewares import log_time
 from .version import __version__
+import pathlib
 
 
 def create_db_tables():
     """Create all tables in database."""
     Base.metadata.create_all(engine)
+
+
+def load_example_data(path: str):
+    """Load example data to database."""
+    with engine.connect() as con:
+        with open((pathlib.Path(__file__).parent) / path, encoding="utf-8") as file:
+            query = text(file.read())
+            con.execute(query)
+            con.commit()
 
 
 def create_application() -> FastAPI:
@@ -56,5 +67,9 @@ def create_application() -> FastAPI:
 
     # create tables in db
     create_db_tables()
+
+    # load example data
+    if settings.LOAD_EXAMPLE_DATA:
+        load_example_data(settings.DUMP_SQL_FILE)
 
     return application
