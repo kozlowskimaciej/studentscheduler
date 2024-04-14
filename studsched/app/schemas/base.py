@@ -67,11 +67,14 @@ class SubjectStatus(IntEnum):
     IN_PROGRESS = auto()
 
 
-class SubjectResponse(BaseModel):
+class Subject(BaseModel):
     """Subject with its requirements"""
 
     id: str
     name: str
     status: SubjectStatus
-    tasks: list[Task]
+    # tasks: list[Task]
     requirements: list[Requirement]
+
+    class Config:
+        orm_mode = True
