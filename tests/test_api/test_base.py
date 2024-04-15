@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from studsched.main import app
+# from studsched.main import create_application
 from studsched.app.api.base import get_db
 from studsched.app.version import __version__
 from studsched.app.schemas.base import (
@@ -25,7 +25,7 @@ def test_subjects_empty(test_client: TestClient):
     assert len(res) == 0
 
 
-def test_subjects(test_client: TestClient, filled_db: Session):
+def test_subjects(app, test_client: TestClient, filled_db: Session):
     app.dependency_overrides[get_db] = filled_db
 
     response = test_client.get("/api/v1/subjects")
@@ -46,7 +46,7 @@ def test_subjects(test_client: TestClient, filled_db: Session):
     assert requirement["threshold_type"] == ThresholdType.POINTS
 
 
-def test_add_requirements(test_client: TestClient, filled_db: Session):
+def test_add_requirements(app, test_client: TestClient, filled_db: Session):
     app.dependency_overrides[get_db] = filled_db
 
     response = test_client.post(

@@ -19,6 +19,7 @@ class LoggingConfig(BaseModel):
 class Settings(BaseSettings):
     PROJECT_NAME: str = 'Student Scheduler'
     PROJECT_SLUG: str = 'studsched'
+    LOAD_EXAMPLE_DATA: bool = False
 
     DEBUG: bool = True
     API_STR: str = "/api/v1"

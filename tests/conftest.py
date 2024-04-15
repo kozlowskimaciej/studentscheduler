@@ -8,10 +8,13 @@ from studsched.app.db.base import Base
 from studsched.app.db.models import models
 from studsched.app.schemas import base as schemas
 
+@pytest.fixture
+def app():
+    return create_application()
+
 
 @pytest.fixture
-def test_client():
-    app = create_application()
+def test_client(app):
     test_client = TestClient(app)
     return test_client
 
