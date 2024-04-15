@@ -1,15 +1,13 @@
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import select
+from sqlmodel import Session, select
 
-from ...schemas import base as schemas
 from ...db.models import models
 
 
 def add_requirement(
-    db: Session, requirement: schemas.RequirementCreate, subject_id: int
+    db: Session, requirement: models.RequirementCreate, subject_id: int
 ) -> models.Requirement:
     db_requirement = models.Requirement(
-        **requirement.dict(), linked_course_id=subject_id
+        **requirement.model_dump(), linked_course_id=subject_id
     )
     db.add(db_requirement)
     db.commit()
@@ -18,17 +16,14 @@ def add_requirement(
 
 
 def get_subjects(db: Session):
-    linked_courses = db.scalars(
-        select(models.LinkedCourse).options(
-            joinedload(models.LinkedCourse.requirements)
-        )
-    )
+    statement = select(models.LinkedCourse)
+    linked_courses = db.exec(statement).all()
     return [
-        schemas.Subject(
-            **linked_course._asdict(),
+        models.Subject(
+            **linked_course.model_dump(),
             name="Subject",
-            status=schemas.SubjectStatus.IN_PROGRESS,
+            status=models.SubjectStatus.IN_PROGRESS,
             requirements=linked_course.requirements
         )
-        for linked_course in linked_courses.unique().all()
+        for linked_course in linked_courses
     ]

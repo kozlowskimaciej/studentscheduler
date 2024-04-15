@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 # from studsched.main import create_application
 from studsched.app.api.base import get_db
 from studsched.app.version import __version__
-from studsched.app.schemas.base import (
+from studsched.app.db.models.models import (
     SubjectStatus,
     TaskType,
     RequirementType,
@@ -34,7 +34,7 @@ def test_subjects(app, test_client: TestClient, filled_db: Session):
     assert len(res) == 1
 
     subject = res[0]
-    assert subject["id"] == "1"
+    assert subject["id"] == 1
     assert subject["name"] == "Subject"
     assert subject["status"] == SubjectStatus.IN_PROGRESS
     assert len(subject["requirements"]) == 1
