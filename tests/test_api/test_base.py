@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 
 # from studsched.main import create_application
 from studsched.app.api.base import get_db

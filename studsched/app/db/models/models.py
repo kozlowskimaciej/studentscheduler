@@ -1,14 +1,33 @@
-"""Sqlalchemy models"""
+"""Sqlmodel models"""
 
 from sqlmodel import Field, SQLModel, Relationship
 from typing import Optional
 
-from ...schemas.base import (
-    TaskType,
-    RequirementType,
-    ThresholdType,
-    SubjectStatus,
-)
+from enum import IntEnum, auto
+
+
+class TaskType(IntEnum):
+    LAB = auto()
+    EXAM = auto()
+    COLL = auto()
+
+
+class RequirementType(IntEnum):
+    TOTAL = auto()
+    SEPARATELY = auto()
+
+
+class ThresholdType(IntEnum):
+    PERCENT = auto()
+    POINTS = auto()
+
+
+class SubjectStatus(IntEnum):
+    """Status of subject completion"""
+
+    PASSED = auto()
+    FAILED = auto()
+    IN_PROGRESS = auto()
 
 
 class VersionResponse(SQLModel):

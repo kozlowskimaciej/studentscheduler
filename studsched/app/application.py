@@ -5,8 +5,7 @@ import logging.config
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from sqlalchemy import text
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, text
 from .api import api_router
 from .configs import get_settings
 from .db import engine
