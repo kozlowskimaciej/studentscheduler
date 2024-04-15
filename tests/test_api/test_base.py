@@ -26,7 +26,7 @@ def test_subjects_empty(test_client: TestClient):
 
 
 def test_subjects(app, test_client: TestClient, filled_db: Session):
-    app.dependency_overrides[get_db] = filled_db
+    app.dependency_overrides[get_db] = lambda: filled_db
 
     response = test_client.get("/api/v1/subjects")
     assert response.status_code == 200
@@ -47,7 +47,7 @@ def test_subjects(app, test_client: TestClient, filled_db: Session):
 
 
 def test_add_requirements(app, test_client: TestClient, filled_db: Session):
-    app.dependency_overrides[get_db] = filled_db
+    app.dependency_overrides[get_db] = lambda: filled_db
 
     response = test_client.post(
         "/api/v1/subjects/1/requirements",
