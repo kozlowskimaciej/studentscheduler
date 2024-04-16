@@ -1,23 +1,24 @@
 """Endpoints for getting version information."""
 
 from typing import Any
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 from fastapi import APIRouter, Depends
 
 from ..db.queries import queries
-from ..db.session import SessionLocal
+from ..db.session import engine
 from ..version import __version__
-from ..schemas.base import VersionResponse, Subject, RequirementCreate
+from ..db.models.models import (
+    RequirementCreate,
+    VersionResponse,
+    Subject,
+)
 
 base_router = APIRouter()
 
 
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    with Session(engine) as session:
+        yield session
 
 
 @base_router.get("/version", response_model=VersionResponse)
@@ -43,7 +44,6 @@ async def add_requirements(
     db: Session = Depends(get_db),
 ):
     """Adds new requirement for a given subject"""
-
     return [
         queries.add_requirement(db, requirement, subject_id)
         for requirement in requirements

@@ -1,28 +1,67 @@
-"""Sqlalchemy models"""
+"""Sqlmodel models"""
 
-from sqlalchemy import Column, Integer, Enum, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlmodel import Field, SQLModel, Relationship
+from typing import Optional
 
-from ...schemas.base import TaskType, RequirementType, ThresholdType
-from ..base import Base
-
-
-class Requirement(Base):
-    __tablename__ = "requirements"
-
-    id = Column(Integer, primary_key=True)
-    task_type = Column(Enum(TaskType))
-    requirement_type = Column(Enum(RequirementType))
-    threshold = Column(Integer)
-    threshold_type = Column(Enum(ThresholdType))
-    linked_course_id = Column(Integer, ForeignKey("linked_course.id"))
-
-    course = relationship("LinkedCourse", back_populates="requirements")
+from enum import IntEnum, auto
 
 
-class LinkedCourse(Base):
-    __tablename__ = "linked_course"
+class TaskType(IntEnum):
+    LAB = auto()
+    EXAM = auto()
+    COLL = auto()
 
-    id = Column(Integer, primary_key=True)
 
-    requirements = relationship("Requirement", back_populates="course")
+class RequirementType(IntEnum):
+    TOTAL = auto()
+    SEPARATELY = auto()
+
+
+class ThresholdType(IntEnum):
+    PERCENT = auto()
+    POINTS = auto()
+
+
+class SubjectStatus(IntEnum):
+    """Status of subject completion"""
+
+    PASSED = auto()
+    FAILED = auto()
+    IN_PROGRESS = auto()
+
+
+class VersionResponse(SQLModel):
+    """Response for version endpoint."""
+
+    version: str
+
+
+class LinkedCourse(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    requirements: list["Requirement"] = Relationship(back_populates="course")
+
+
+class RequirementBase(SQLModel):
+    task_type: TaskType
+    requirement_type: RequirementType
+    threshold: int
+    threshold_type: ThresholdType
+
+
+class Requirement(RequirementBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    linked_course_id: int = Field(default=None, foreign_key="linkedcourse.id")
+
+    course: LinkedCourse = Relationship(back_populates="requirements")
+
+
+class RequirementCreate(RequirementBase):
+    """Model for creating new requirement"""
+
+
+class Subject(SQLModel):
+    id: int
+    name: str
+    status: SubjectStatus
+    requirements: list["Requirement"]

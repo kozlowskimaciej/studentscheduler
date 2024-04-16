@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 from studsched.app.db.queries.queries import get_subjects
 
 
