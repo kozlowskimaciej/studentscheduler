@@ -1,10 +1,17 @@
 """Base settings class contains only important fields."""
+
 # mypy: ignore-errors
 import ast
 import os
 import secrets
 from typing import List, Union, Dict, Optional, Any
-from pydantic import BaseModel, AnyHttpUrl, BaseSettings, validator, PostgresDsn
+from pydantic import (
+    BaseModel,
+    AnyHttpUrl,
+    BaseSettings,
+    validator,
+    PostgresDsn,
+)
 from ..utils.logging import StandardFormatter, ColorFormatter
 
 
@@ -17,8 +24,9 @@ class LoggingConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = 'Student Scheduler'
-    PROJECT_SLUG: str = 'studsched'
+    PROJECT_NAME: str = "Student Scheduler"
+    PROJECT_SLUG: str = "studsched"
+    LOAD_EXAMPLE_DATA: bool = False
 
     DEBUG: bool = True
     API_STR: str = "/api/v1"
@@ -47,7 +55,7 @@ class Settings(BaseSettings):
     CORS_ORIGIN_REGEX: str = None
     """A list of HTTP methods that should be allowed for cross-origin requests.
     Defaults to ['*']. You can use ['GET'] to allow standard GET method."""
-    CORS_METHODS: List[str] = ['GET']
+    CORS_METHODS: List[str] = ["GET"]
     """A list of HTTP request headers that should be supported for cross-origin
     requests. Defaults to ['*'] to allow all headers. """
     CORS_HEADERS: List[str] = []
@@ -57,7 +65,9 @@ class Settings(BaseSettings):
 
     # noinspection PyMethodParameters
     @validator("CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+    def assemble_cors_origins(
+        cls, v: Union[str, List[str]]
+    ) -> Union[List[str], str]:
         """Validate the value of BACKEND_CORS_ORIGINS.
 
         Args:
@@ -81,7 +91,9 @@ class Settings(BaseSettings):
     # ########################### DB Configuration #############################
     POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER") or "localhost:5432"
     POSTGRES_USER: str = os.getenv("POSTGRES_USER") or "postgres"
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD") or "mysecretpassword"
+    POSTGRES_PASSWORD: str = (
+        os.getenv("POSTGRES_PASSWORD") or "mysecretpassword"
+    )
     POSTGRES_DB: str = os.getenv("POSTGRES_DB") or "postgres"
 
     # set the default value to None, such that the assemble_db_connection can
@@ -90,7 +102,9 @@ class Settings(BaseSettings):
 
     # noinspection PyMethodParameters
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> str:
+    def assemble_db_connection(
+        cls, v: Optional[str], values: Dict[str, Any]
+    ) -> str:
         """Assemble the postgres DB URI with the provided POSTGRES_SERVER,
         POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB.
 
@@ -117,30 +131,28 @@ class Settings(BaseSettings):
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            'colorFormatter': {'()': ColorFormatter},
-            'standardFormatter': {'()': StandardFormatter},
+            "colorFormatter": {"()": ColorFormatter},
+            "standardFormatter": {"()": StandardFormatter},
         },
         "handlers": {
-            'consoleHandler': {
-                'class': 'logging.StreamHandler',
-                'level': "DEBUG",
-                'formatter': 'standardFormatter',
-                'stream': 'ext://sys.stdout',
+            "consoleHandler": {
+                "class": "logging.StreamHandler",
+                "level": "DEBUG",
+                "formatter": "standardFormatter",
+                "stream": "ext://sys.stdout",
             },
         },
         "loggers": {
             "studsched": {
-                'handlers': ['consoleHandler'],
-                'level': "DEBUG",
+                "handlers": ["consoleHandler"],
+                "level": "DEBUG",
             },
-            "uvicorn": {
-                'handlers': ['consoleHandler']
-            },
+            "uvicorn": {"handlers": ["consoleHandler"]},
             "uvicorn.access": {
                 # Use the project logger to replace uvicorn.access logger
-                'handlers': []
-            }
-        }
+                "handlers": []
+            },
+        },
     }
 
     class Config:
