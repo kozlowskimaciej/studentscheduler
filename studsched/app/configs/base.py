@@ -89,10 +89,12 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     # ########################### DB Configuration #############################
-    POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER")
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB")
+    POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER") or "localhost:5432"
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER") or "postgres"
+    POSTGRES_PASSWORD: str = (
+        os.getenv("POSTGRES_PASSWORD") or "mysecretpassword"
+    )
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB") or "postgres"
 
     # set the default value to None, such that the assemble_db_connection can
     # build the URI for us and do checks.
