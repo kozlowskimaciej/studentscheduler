@@ -5,6 +5,7 @@ import logging.config
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import SQLModel, text
 from .api import api_router
 from .configs import get_settings
@@ -68,6 +69,10 @@ def create_application() -> FastAPI:
 
     # add defined middleware functions
     application.add_middleware(BaseHTTPMiddleware, dispatch=log_time)
+    application.add_middleware(
+        SessionMiddleware,
+        secret_key="!secret",
+    )
 
     # create tables in db
     create_db_tables()
