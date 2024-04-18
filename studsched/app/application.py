@@ -71,7 +71,7 @@ def create_application() -> FastAPI:
     application.add_middleware(BaseHTTPMiddleware, dispatch=log_time)
     application.add_middleware(
         SessionMiddleware,
-        secret_key="!secret",
+        secret_key="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
     )
 
     # create tables in db

@@ -34,9 +34,12 @@ async def login(request: Request):
 @authorization_router.route("/auth")
 async def auth(request: Request):
     token = await oauth.usos.authorize_access_token(request)
-    url = "services/users/user"
+    url = "services/courses/user"
     resp = await oauth.usos.get(
-        url, params={"fields": "student_programmes"}, token=token
+        url,
+        params={"fields": "course_editions[course_id|course_name]"},
+        token=token,
     )
-    print(resp.json())
-    return RedirectResponse(url="/api/v1/subjects")
+    d = resp.json()
+    print(resp.json().keys())
+    return RedirectResponse(url="/docs")
