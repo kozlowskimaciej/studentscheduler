@@ -10,6 +10,11 @@ if [ "$command" = "clean" ]; then
     exit 0
 fi
 
+if [ "$command" = "debug" ]; then
+    echo "In debug mode."
+    env="dev"
+fi
+
 if [ -z "$env" ]; then
     echo "No environment provided. Please provide a valid environment (dev, prod, test)."
     echo "Usage: ./docker-compose.sh [command] [env]"
@@ -40,8 +45,11 @@ if [ "$command" = "down" ]; then
 elif [ "$command" = "run" ]; then
     if [ "$env" = "test" ]; then
         echo "STARTING TEST ENVIRONMENT"
-        $docker_command run --rm backend
+        $docker_command run --rm --service-ports backend
         $docker_command down -v
+    elif [ "$env" = "debug"]; then
+        echo "Running the database for debugging"
+        $docker_command run --rm --service-ports db
     else
         echo "STARTING DEV ENVIRONMENT"
         $docker_command up 
@@ -62,6 +70,9 @@ elif [ "$command" = "flush"  ]; then
     else
         echo "Flush command is only applicable for dev environment."
     fi
+elif [ "$command" = "debug" ]; then
+    echo "Running the database for backend debugging"
+    $docker_command run --service-ports db
 else
     echo "Invalid command. Please provide a valid command (run, build, down, clean)."
     echo "Usage: ./docker-compose.sh [command] [env]"
