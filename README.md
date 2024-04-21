@@ -21,6 +21,12 @@ For example, to start the application in the development environment, you would 
 This command will start the application in the testing environment, which uses the settings in the .env.test file and the `docker-compose.test.yml` configuration.
 After the tests are complete, test database is flushed. Both containers are removed.
 
+## Debugging the backend
+```bash
+./docker-compose.sh debug 
+```
+This command will start the docker compose database service (db) needed for debugging backend.
+
 ## Building the application
 ```bash
 ./docker-compose.sh build ENV
