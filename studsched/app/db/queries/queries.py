@@ -15,7 +15,7 @@ def add_requirement(
     return db_requirement
 
 
-def get_subjects(db: Session):
+def get_subjects(db: Session) -> list[models.Subject]:
     statement = select(models.LinkedCourse)
     linked_courses = db.exec(statement).all()
     return [
@@ -27,3 +27,16 @@ def get_subjects(db: Session):
         )
         for linked_course in linked_courses
     ]
+
+
+def add_user_info(db: Session, user_info: models.UserInfo):
+    """Adds information about students and his/her courses"""
+
+    user = models.User(**user_info.user.model_dump())
+    db.add(user)
+
+    for course in user_info.courses:
+        db.add(models.Course(**course.model_dump()))
+        linked_course = models.LinkedCourse()
+        db.add(linked_course)
+    db.commit()

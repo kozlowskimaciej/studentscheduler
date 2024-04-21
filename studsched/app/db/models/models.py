@@ -36,6 +36,35 @@ class VersionResponse(SQLModel):
     version: str
 
 
+class UserBase(SQLModel):
+    """A student"""
+
+    first_name: str
+    last_name: str
+
+
+class User(UserBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+
+class UserPublic(UserBase):
+    id: int
+
+
+class CourseBase(SQLModel):
+    """A course that students can take"""
+
+    name: str
+
+
+class Course(CourseBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+
+class CoursePublic(CourseBase):
+    id: int
+
+
 class LinkedCourse(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -64,4 +93,11 @@ class Subject(SQLModel):
     id: int
     name: str
     status: SubjectStatus
-    requirements: list["Requirement"]
+    requirements: list[Requirement]
+
+
+class UserInfo(SQLModel):
+    """User with his/her courses"""
+
+    user: User
+    courses: list[CoursePublic]

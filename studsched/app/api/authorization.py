@@ -1,9 +1,10 @@
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
-
 from starlette.config import Config
 from starlette.requests import Request
+
+from ..db.models import models
 
 authorization_router = APIRouter()
 
@@ -34,12 +35,21 @@ async def login(request: Request):
 @authorization_router.route("/auth")
 async def auth(request: Request):
     token = await oauth.usos.authorize_access_token(request)
-    url = "services/courses/user"
-    resp = await oauth.usos.get(
-        url,
-        params={"fields": "course_editions[course_id|course_name]"},
-        token=token,
-    )
-    d = resp.json()
-    print(resp.json().keys())
+    # url = "services/courses/user"
+    # user = (
+    #     await oauth.usos.get(
+    #         "services/users/user",
+    #         params={"fields": "id|first_name|last_name"},
+    #         token=token,
+    #     )
+    # ).json()
+    # courses = (
+    #     await oauth.usos.get(
+    #         url,
+    #         params={"fields": "course_editions[course_id|course_name]"},
+    #         token=token,
+    #     )
+    # ).json()
+    # courses = [c for cs in courses.keys() for c in cs]
+    # user_info = models.UserInfo(user=user, courses=courses)
     return RedirectResponse(url="/docs")
