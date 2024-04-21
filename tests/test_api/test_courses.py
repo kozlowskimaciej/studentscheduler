@@ -42,7 +42,7 @@ def test_add_requirements(app, test_client: TestClient, filled_db: Session):
     app.dependency_overrides[get_db] = lambda: filled_db
 
     response = test_client.post(
-        "/api/v1/courses/1/requirements",
+        "/api/v1/courses/requirements/1",
         json=[
             {
                 "task_type": TaskType.EXAM,

@@ -4,15 +4,26 @@ from ...db.models import models
 
 
 def add_requirement(
-    db: Session, requirement: models.RequirementCreate, subject_id: int
+    db: Session, requirement: models.RequirementCreate, linked_course_id: int
 ) -> models.Requirement:
     db_requirement = models.Requirement(
-        **requirement.model_dump(), linked_course_id=subject_id
+        **requirement.model_dump(), linked_course_id=linked_course_id
     )
     db.add(db_requirement)
     db.commit()
     db.refresh(db_requirement)
     return db_requirement
+
+
+def delete_requirement(
+        db: Session, requirement_id: int
+) -> None:
+    statement = select(models.Requirement) \
+                .where(models.Requirement == requirement_id)
+    req = db.exec(statement).all()
+    assert len(req) == 1, f'Requirement id {requirement_id} not found'
+    db.delete(req[0])
+    db.commit()
 
 
 def get_courses(db: Session):
