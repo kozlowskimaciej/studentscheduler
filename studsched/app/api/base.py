@@ -2,18 +2,15 @@
 
 from typing import Any
 from sqlmodel import Session
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from ..db.queries import queries
 from ..db.session import engine
 from ..version import __version__
 from ..db.models.models import (
-    RequirementCreate,
     VersionResponse,
-    Subject,
 )
 
-base_router = APIRouter()
+base_router = APIRouter(tags=['base'])
 
 
 def get_db():
@@ -30,21 +27,3 @@ async def version() -> Any:
         VersionResponse: A json response containing the version number.
     """
     return VersionResponse(version=__version__)
-
-
-@base_router.get("/subjects", response_model=list[Subject])
-async def subjects(db: Session = Depends(get_db)) -> Any:
-    return queries.get_subjects(db)
-
-
-@base_router.post("/subjects/{subject_id}/requirements")
-async def add_requirements(
-    requirements: list[RequirementCreate],
-    subject_id: int,
-    db: Session = Depends(get_db),
-):
-    """Adds new requirement for a given subject"""
-    return [
-        queries.add_requirement(db, requirement, subject_id)
-        for requirement in requirements
-    ]

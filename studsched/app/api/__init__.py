@@ -2,8 +2,8 @@
 module inside the API folder"""
 from fastapi import APIRouter
 from .base import base_router
-# TODO: import your modules here.
+from .courses import courses_router
 
 api_router = APIRouter()
-api_router.include_router(base_router, tags=["base"])
-# TODO: include the routers from other modules
+api_router.include_router(base_router)
+api_router.include_router(courses_router)

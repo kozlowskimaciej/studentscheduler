@@ -15,14 +15,14 @@ def add_requirement(
     return db_requirement
 
 
-def get_subjects(db: Session):
+def get_courses(db: Session):
     statement = select(models.LinkedCourse)
     linked_courses = db.exec(statement).all()
     return [
-        models.Subject(
+        models.Course(
             **linked_course.model_dump(),
-            name="Subject",
-            status=models.SubjectStatus.IN_PROGRESS,
+            name="Course",
+            status=models.CourseStatus.IN_PROGRESS,
             requirements=linked_course.requirements
         )
         for linked_course in linked_courses

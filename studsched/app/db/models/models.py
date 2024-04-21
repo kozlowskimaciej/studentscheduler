@@ -22,7 +22,7 @@ class ThresholdType(IntEnum):
     POINTS = auto()
 
 
-class SubjectStatus(IntEnum):
+class CourseStatus(IntEnum):
     """Status of subject completion"""
 
     PASSED = auto()
@@ -60,8 +60,8 @@ class RequirementCreate(RequirementBase):
     """Model for creating new requirement"""
 
 
-class Subject(SQLModel):
+class Course(SQLModel):
     id: int
     name: str
-    status: SubjectStatus
+    status: CourseStatus
     requirements: list["Requirement"]
