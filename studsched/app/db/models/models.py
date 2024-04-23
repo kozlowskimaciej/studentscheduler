@@ -41,7 +41,7 @@ class UserBase(SQLModel):
     """A student"""
 
     first_name: str
-    middle_names: Optional[str]
+    middle_names: Optional[str] = None
     last_name: str
     email: str
     last_login: datetime

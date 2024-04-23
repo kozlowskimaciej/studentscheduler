@@ -1,4 +1,3 @@
-from authlib.integrations.starlette_client import OAuth
 from authlib.integrations.starlette_client.apps import StarletteOAuth1App
 from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
@@ -13,23 +12,9 @@ from .base import get_db
 authorization_router = APIRouter()
 
 
-oauth = OAuth()
-
-
-oauth.register(
-    name="usos",
-    client_id="TQbmzC4s3FSSBLd5gWkq",
-    client_secret="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
-    api_base_url="https://apps.usos.pw.edu.pl/",
-    request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email",
-    authorize_url="https://apps.usos.pw.edu.pl/services/oauth/authorize",
-    access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
-)
-
-
 @authorization_router.get("/login")
 async def login(request: Request):
-    usos: StarletteOAuth1App = oauth.create_client("usos")
+    usos: StarletteOAuth1App = request.app.oauth.create_client("usos")
 
     redirect_uri = request.url_for("auth")
     return await usos.authorize_redirect(request, redirect_uri)
@@ -37,7 +22,7 @@ async def login(request: Request):
 
 @authorization_router.get("/auth")
 async def auth(request: Request, db: Session = Depends(get_db)):
-    usos: StarletteOAuth1App = oauth.create_client("usos")
+    usos: StarletteOAuth1App = request.app.oauth.create_client("usos")
 
     token = await usos.authorize_access_token(request)
 
@@ -45,7 +30,9 @@ async def auth(request: Request, db: Session = Depends(get_db)):
 
     user = await usos.get(
         "services/users/user",
-        params={"fields": "student_number|first_name|middle_names|last_name|email"},
+        params={
+            "fields": "student_number|first_name|middle_names|last_name|email"
+        },
         token=token,
     )
     user = user.json()

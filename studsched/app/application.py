@@ -14,6 +14,24 @@ from .events import startup_handler, shutdown_handler
 from .middlewares import log_time
 from .version import __version__
 import pathlib
+from contextlib import asynccontextmanager
+from authlib.integrations.starlette_client import OAuth
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    oauth = OAuth()
+    oauth.register(
+        name="usos",
+        client_id="TQbmzC4s3FSSBLd5gWkq",
+        client_secret="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
+        api_base_url="https://apps.usos.pw.edu.pl/",
+        request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email",
+        authorize_url="https://apps.usos.pw.edu.pl/services/oauth/authorize",
+        access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
+    )
+    app.oauth = oauth
+    yield
 
 
 def create_db_tables():
@@ -44,6 +62,7 @@ def create_application() -> FastAPI:
         debug=settings.DEBUG,
         version=__version__,
         openapi_url=f"{settings.API_STR}/openapi.json",
+        lifespan=lifespan,
     )
 
     # Set all CORS enabled origins
