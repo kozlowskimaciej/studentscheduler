@@ -1,19 +1,19 @@
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter
+from authlib.integrations.starlette_client.apps import StarletteOAuth1App
+from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
-from starlette.config import Config
 from starlette.requests import Request
+from sqlmodel import Session
 
 from ..db.models import models
+from ..db.queries import queries
+from .base import get_db
 
 authorization_router = APIRouter()
 
-# config = Config(".env")  # read config from .env file
+
 oauth = OAuth()
 
-
-usosapi_base_url = "http://apps.usos.pw.edu.pl/"
-usosapi_base_url_secure = "https://apps.usos.pw.edu.pl/"
 
 oauth.register(
     name="usos",
@@ -26,30 +26,39 @@ oauth.register(
 )
 
 
-@authorization_router.route("/login")
+@authorization_router.get("/login")
 async def login(request: Request):
     redirect_uri = request.url_for("auth")
     return await oauth.usos.authorize_redirect(request, redirect_uri)
 
 
-@authorization_router.route("/auth")
-async def auth(request: Request):
-    token = await oauth.usos.authorize_access_token(request)
-    # url = "services/courses/user"
-    # user = (
-    #     await oauth.usos.get(
-    #         "services/users/user",
-    #         params={"fields": "id|first_name|last_name"},
-    #         token=token,
-    #     )
-    # ).json()
-    # courses = (
-    #     await oauth.usos.get(
-    #         url,
-    #         params={"fields": "course_editions[course_id|course_name]"},
-    #         token=token,
-    #     )
-    # ).json()
-    # courses = [c for cs in courses.keys() for c in cs]
-    # user_info = models.UserInfo(user=user, courses=courses)
-    return RedirectResponse(url="/docs")
+@authorization_router.get("/auth")
+async def auth(request: Request, db: Session = Depends(get_db)):
+    usos: StarletteOAuth1App = oauth.create_client("usos")
+
+    token = await usos.authorize_access_token(request)
+
+    user = await usos.get(
+        "services/users/user",
+        params={"fields": "id|first_name|last_name"},
+        token=token,
+    )
+    user = user.json()
+
+    courses = await usos.get(
+        "services/courses/user",
+        params={"fields": "course_editions[course_id|course_name]"},
+        token=token,
+    )
+    courses = courses.json()
+    courses = [
+        {"name": c["course_name"]["pl"], "code": c["course_id"]}
+        for cs in courses["course_editions"].values()
+        for c in cs
+    ]
+
+    user_info = models.UserInfo(user=user, courses=courses)
+    queries.add_user_info(db, user_info)
+
+    url = request.url_for("subjects")
+    return RedirectResponse(url=url)

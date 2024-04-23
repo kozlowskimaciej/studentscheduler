@@ -20,7 +20,7 @@ def test_add_user_info(db_session: Session):
             first_name="Bob",
             last_name="Rob",
         ),
-        courses=[models.CoursePublic(id=2, name="zprp")],
+        courses=[models.CourseCreate(name="zprp", code="103A-INSZI-ISP-ZPRP")],
     )
 
     add_user_info(db_session, user_info)

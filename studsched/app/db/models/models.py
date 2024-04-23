@@ -55,14 +55,15 @@ class CourseBase(SQLModel):
     """A course that students can take"""
 
     name: str
+    code: str
+
+
+class CourseCreate(CourseBase):
+    """Model for creating new course"""
 
 
 class Course(CourseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-
-
-class CoursePublic(CourseBase):
-    id: int
 
 
 class LinkedCourse(SQLModel, table=True):
@@ -100,4 +101,4 @@ class UserInfo(SQLModel):
     """User with his/her courses"""
 
     user: User
-    courses: list[CoursePublic]
+    courses: list[CourseCreate]
