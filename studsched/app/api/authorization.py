@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 from sqlmodel import Session
+from datetime import datetime
 
 from ..db.models import models
 from ..db.queries import queries
@@ -20,7 +21,7 @@ oauth.register(
     client_id="TQbmzC4s3FSSBLd5gWkq",
     client_secret="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
     api_base_url="https://apps.usos.pw.edu.pl/",
-    request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token",
+    request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email",
     authorize_url="https://apps.usos.pw.edu.pl/services/oauth/authorize",
     access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
 )
@@ -28,8 +29,10 @@ oauth.register(
 
 @authorization_router.get("/login")
 async def login(request: Request):
+    usos: StarletteOAuth1App = oauth.create_client("usos")
+
     redirect_uri = request.url_for("auth")
-    return await oauth.usos.authorize_redirect(request, redirect_uri)
+    return await usos.authorize_redirect(request, redirect_uri)
 
 
 @authorization_router.get("/auth")
@@ -38,12 +41,15 @@ async def auth(request: Request, db: Session = Depends(get_db)):
 
     token = await usos.authorize_access_token(request)
 
+    request.session.clear()
+
     user = await usos.get(
         "services/users/user",
-        params={"fields": "id|first_name|last_name"},
+        params={"fields": "student_number|first_name|middle_names|last_name|email"},
         token=token,
     )
     user = user.json()
+    user["last_login"] = datetime.now()
 
     courses = await usos.get(
         "services/courses/user",

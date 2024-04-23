@@ -2,6 +2,7 @@
 
 from sqlmodel import Field, SQLModel, Relationship
 from typing import Optional
+from datetime import datetime
 
 from enum import IntEnum, auto
 
@@ -40,11 +41,18 @@ class UserBase(SQLModel):
     """A student"""
 
     first_name: str
+    middle_names: Optional[str]
     last_name: str
+    email: str
+    last_login: datetime
 
 
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+
+
+class UserCreate(UserBase):
+    "Model for creating new user"
 
 
 class UserPublic(UserBase):
