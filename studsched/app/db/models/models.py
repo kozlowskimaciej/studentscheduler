@@ -60,6 +60,10 @@ class RequirementCreate(RequirementBase):
     """Model for creating new requirement"""
 
 
+class RequirementPublic(RequirementBase):
+    id: int
+
+
 class Subject(SQLModel):
     id: int
     name: str

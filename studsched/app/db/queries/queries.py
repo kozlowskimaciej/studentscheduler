@@ -15,6 +15,15 @@ def add_requirement(
     return db_requirement
 
 
+def update_requirement(
+    db: Session, updated_requirement: models.RequirementPublic
+):
+    db_requirement = db.get(models.Requirement, updated_requirement.id)
+    db_requirement.sqlmodel_update(updated_requirement.model_dump())
+    db.add(db_requirement)
+    db.commit()
+
+
 def get_subjects(db: Session):
     statement = select(models.LinkedCourse)
     linked_courses = db.exec(statement).all()
