@@ -1,28 +1,28 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 
 from ...db.models import models
 
 
-def add_requirement(
-    db: Session, requirement: models.RequirementCreate, subject_id: int
-) -> models.Requirement:
-    db_requirement = models.Requirement(
-        **requirement.model_dump(), linked_course_id=subject_id
-    )
-    db.add(db_requirement)
-    db.commit()
-    db.refresh(db_requirement)
-    return db_requirement
-
-
-def update_requirement(
+def replace_requirements(
     db: Session,
-    requirement_id: int,
-    updated_requirement: models.RequirementUpdate,
+    linked_course_id: int,
+    new_requirements: list[models.RequirementUpdate],
 ):
-    db_requirement = db.get_one(models.Requirement, requirement_id)
-    db_requirement.sqlmodel_update(updated_requirement.model_dump())
-    db.add(db_requirement)
+    """Replace all subject's requirements with new ones"""
+
+    delete_statement = delete(models.Requirement).where(
+        models.Requirement.linked_course_id == linked_course_id
+    )
+    db.exec(delete_statement)
+
+    db.add_all(
+        models.Requirement(
+            **requirement.model_dump(),
+            linked_course_id=linked_course_id,
+        )
+        for requirement in new_requirements
+    )
+
     db.commit()
 
 
@@ -34,7 +34,7 @@ def get_subjects(db: Session):
             **linked_course.model_dump(),
             name="Subject",
             status=models.SubjectStatus.IN_PROGRESS,
-            requirements=linked_course.requirements
+            requirements=linked_course.requirements,
         )
         for linked_course in linked_courses
     ]

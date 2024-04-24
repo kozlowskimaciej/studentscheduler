@@ -2,14 +2,12 @@
 
 from typing import Any
 from sqlmodel import Session
-from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy.orm.exc import NoResultFound
+from fastapi import APIRouter, Depends
 
 from ..db.queries import queries
 from ..db.session import engine
 from ..version import __version__
 from ..db.models.models import (
-    RequirementCreate,
     RequirementUpdate,
     VersionResponse,
     Subject,
@@ -39,33 +37,10 @@ async def subjects(db: Session = Depends(get_db)) -> Any:
     return queries.get_subjects(db)
 
 
-@base_router.post("/subjects/{subject_id}/requirements")
-async def add_requirements(
-    requirements: list[RequirementCreate],
+@base_router.put("/subjects/{subject_id}/requirements")
+async def replace_requirements(
     subject_id: int,
+    requirements: list[RequirementUpdate],
     db: Session = Depends(get_db),
 ):
-    """Adds new requirement for a given subject"""
-    return [
-        queries.add_requirement(db, requirement, subject_id)
-        for requirement in requirements
-    ]
-
-
-@base_router.put(
-    "/subjects/{subject_id}/requirements/{requirement_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def update_requirement(
-    subject_id: int,
-    requirement_id: int,
-    requirement: RequirementUpdate,
-    db: Session = Depends(get_db),
-):
-    try:
-        queries.update_requirement(db, requirement_id, requirement)
-    except NoResultFound:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Requirement not found",
-        )
+    queries.replace_requirements(db, subject_id, requirements)
