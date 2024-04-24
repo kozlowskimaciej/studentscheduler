@@ -60,6 +60,10 @@ class RequirementCreate(RequirementBase):
     """Model for creating new requirement"""
 
 
+class RequirementUpdate(RequirementBase):
+    """Model for updating existing requirement entirely"""
+
+
 class RequirementPublic(RequirementBase):
     id: int
 

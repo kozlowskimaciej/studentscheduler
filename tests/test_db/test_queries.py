@@ -19,8 +19,8 @@ def test_update_requirement(filled_db: Session):
     assert requirement.threshold == 5
 
     fields_dict["threshold"] = 10
-    updated_requirement = models.RequirementPublic(**fields_dict)
-    update_requirement(filled_db, updated_requirement)
+    updated_requirement = models.RequirementUpdate(**fields_dict)
+    update_requirement(filled_db, requirement.id, updated_requirement)
 
     requirement = filled_db.exec(select(models.Requirement)).one()
     assert requirement.threshold == 10

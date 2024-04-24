@@ -16,9 +16,11 @@ def add_requirement(
 
 
 def update_requirement(
-    db: Session, updated_requirement: models.RequirementPublic
+    db: Session,
+    requirement_id: int,
+    updated_requirement: models.RequirementUpdate,
 ):
-    db_requirement = db.get(models.Requirement, updated_requirement.id)
+    db_requirement = db.get(models.Requirement, requirement_id)
     db_requirement.sqlmodel_update(updated_requirement.model_dump())
     db.add(db_requirement)
     db.commit()
