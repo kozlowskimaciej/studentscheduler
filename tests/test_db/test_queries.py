@@ -28,7 +28,7 @@ def test_update_requirement(filled_db: Session):
     assert requirement.threshold == 10
 
 
-def test_update_non_existing_requirement(db_session: Session):
+def test_update_nonexistent_requirement(db_session: Session):
     requirement = models.RequirementUpdate(
         task_type=models.TaskType.LAB,
         requirement_type=models.RequirementType.TOTAL,
@@ -37,9 +37,9 @@ def test_update_non_existing_requirement(db_session: Session):
         linked_course_id=1,
     )
 
-    non_existing_id = 423432
-    found = db_session.get(models.Requirement, non_existing_id)
+    nonexistent_id = 423432
+    found = db_session.get(models.Requirement, nonexistent_id)
     assert found is None
 
     with pytest.raises(NoResultFound):
-        update_requirement(db_session, non_existing_id, requirement)
+        update_requirement(db_session, nonexistent_id, requirement)

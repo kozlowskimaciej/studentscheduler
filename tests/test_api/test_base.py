@@ -103,19 +103,19 @@ def test_update_requirement(
     assert requirement["threshold"] == 10
 
 
-def test_update_non_existing_requirement(
+def test_update_nonexistent_requirement(
     app: FastAPI, test_client: TestClient, filled_db: Session
 ):
     subjects = test_client.get("/api/v1/subjects").json()
     subject = subjects[0]
     requirement = subject["requirements"][0]
 
-    non_existing_id = 423432
-    found = filled_db.get(Requirement, non_existing_id)
+    nonexistent_id = 423432
+    found = filled_db.get(Requirement, nonexistent_id)
     assert found is None
 
     res = test_client.put(
-        f"/api/v1/subjects/{subject['id']}/requirements/{non_existing_id}",
+        f"/api/v1/subjects/{subject['id']}/requirements/{nonexistent_id}",
         json=requirement,
     )
     assert res.status_code == status.HTTP_404_NOT_FOUND
