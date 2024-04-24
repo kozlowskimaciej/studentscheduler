@@ -1,6 +1,8 @@
 from sqlmodel import Session, select
 from studsched.app.db.queries.queries import get_subjects, update_requirement
 from studsched.app.db.models import models
+import pytest
+from sqlalchemy.orm.exc import NoResultFound
 
 
 def test_get_subjects_empty(db_session: Session):
@@ -24,3 +26,20 @@ def test_update_requirement(filled_db: Session):
 
     requirement = filled_db.exec(select(models.Requirement)).one()
     assert requirement.threshold == 10
+
+
+def test_update_non_existing_requirement(db_session: Session):
+    requirement = models.RequirementUpdate(
+        task_type=models.TaskType.LAB,
+        requirement_type=models.RequirementType.TOTAL,
+        threshold=5,
+        threshold_type=models.ThresholdType.POINTS,
+        linked_course_id=1,
+    )
+
+    non_existing_id = 423432
+    found = db_session.get(models.Requirement, non_existing_id)
+    assert found is None
+
+    with pytest.raises(NoResultFound):
+        update_requirement(db_session, non_existing_id, requirement)

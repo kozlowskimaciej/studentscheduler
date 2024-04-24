@@ -2,7 +2,8 @@
 
 from typing import Any
 from sqlmodel import Session
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
+from sqlalchemy.orm.exc import NoResultFound
 
 from ..db.queries import queries
 from ..db.session import engine
@@ -61,4 +62,10 @@ async def update_requirement(
     requirement: RequirementUpdate,
     db: Session = Depends(get_db),
 ):
-    queries.update_requirement(db, requirement_id, requirement)
+    try:
+        queries.update_requirement(db, requirement_id, requirement)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Requirement not found",
+        )

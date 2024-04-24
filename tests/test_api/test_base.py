@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 
 # from studsched.main import create_application
 from studsched.app.api.base import get_db
@@ -10,6 +10,7 @@ from studsched.app.db.models.models import (
     TaskType,
     RequirementType,
     ThresholdType,
+    Requirement,
 )
 
 
@@ -94,9 +95,28 @@ def test_update_requirement(
         f"/api/v1/subjects/{subject['id']}/requirements/{requirement['id']}",
         json=requirement,
     )
-    assert res.status_code == 200
+    assert res.status_code == status.HTTP_204_NO_CONTENT
 
     subjects = test_client.get("/api/v1/subjects").json()
     subject = subjects[0]
     requirement = subject["requirements"][0]
     assert requirement["threshold"] == 10
+
+
+def test_update_non_existing_requirement(
+    app: FastAPI, test_client: TestClient, filled_db: Session
+):
+    subjects = test_client.get("/api/v1/subjects").json()
+    subject = subjects[0]
+    requirement = subject["requirements"][0]
+
+    non_existing_id = 423432
+    found = filled_db.get(Requirement, non_existing_id)
+    assert found is None
+
+    res = test_client.put(
+        f"/api/v1/subjects/{subject['id']}/requirements/{non_existing_id}",
+        json=requirement,
+    )
+    assert res.status_code == status.HTTP_404_NOT_FOUND
+    assert res.json()["detail"] == "Requirement not found"
