@@ -2,7 +2,7 @@
 
 from typing import Any
 from sqlmodel import Session
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
 from ..db.queries import queries
 from ..db.session import engine
@@ -51,7 +51,10 @@ async def add_requirements(
     ]
 
 
-@base_router.put("/subjects/{subject_id}/requirements/{requirement_id}")
+@base_router.put(
+    "/subjects/{subject_id}/requirements/{requirement_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def update_requirement(
     subject_id: int,
     requirement_id: int,
