@@ -54,7 +54,7 @@ def test_replace_requirements(
     requirements = subjects[0]["requirements"]
     assert len(requirements) == 1
 
-    requirement_update = models.RequirementUpdate(**requirement.model_dump())
+    requirement_update = models.RequirementCreate(**requirement.model_dump())
     res = test_client.put(
         f"/api/v1/subjects/{linked_course.id}/requirements",
         json=[requirement_update.model_dump()] * 2,

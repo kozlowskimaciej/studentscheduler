@@ -6,7 +6,7 @@ from ...db.models import models
 def replace_requirements(
     db: Session,
     linked_course_id: int,
-    new_requirements: list[models.RequirementUpdate],
+    new_requirements: list[models.RequirementCreate],
 ):
     """Replace all subject's requirements with new ones"""
 

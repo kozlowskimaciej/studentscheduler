@@ -7,11 +7,7 @@ from fastapi import APIRouter, Depends
 from ..db.queries import queries
 from ..db.session import engine
 from ..version import __version__
-from ..db.models.models import (
-    RequirementUpdate,
-    VersionResponse,
-    Subject,
-)
+from ..db.models import models
 
 base_router = APIRouter()
 
@@ -21,7 +17,7 @@ def get_db():
         yield session
 
 
-@base_router.get("/version", response_model=VersionResponse)
+@base_router.get("/version", response_model=models.VersionResponse)
 async def version() -> Any:
     """Provide version information about the web service.
 
@@ -29,10 +25,10 @@ async def version() -> Any:
     Returns:
         VersionResponse: A json response containing the version number.
     """
-    return VersionResponse(version=__version__)
+    return models.VersionResponse(version=__version__)
 
 
-@base_router.get("/subjects", response_model=list[Subject])
+@base_router.get("/subjects", response_model=list[models.Subject])
 async def subjects(db: Session = Depends(get_db)) -> Any:
     return queries.get_subjects(db)
 
@@ -40,7 +36,7 @@ async def subjects(db: Session = Depends(get_db)) -> Any:
 @base_router.put("/subjects/{subject_id}/requirements")
 async def replace_requirements(
     subject_id: int,
-    requirements: list[RequirementUpdate],
+    requirements: list[models.RequirementCreate],
     db: Session = Depends(get_db),
 ):
     queries.replace_requirements(db, subject_id, requirements)

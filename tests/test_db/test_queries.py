@@ -22,7 +22,7 @@ def test_replace_requirements(
     requirements = subjects[0].requirements
     assert len(requirements) == 1
 
-    requirement_update = models.RequirementUpdate(**requirement.model_dump())
+    requirement_update = models.RequirementCreate(**requirement.model_dump())
     replace_requirements(filled_db, linked_course.id, [requirement_update] * 2)
 
     subjects = get_subjects(filled_db)
