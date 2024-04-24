@@ -10,6 +10,10 @@ def replace_requirements(
 ):
     """Replace all subject's requirements with new ones"""
 
+    linked_course = db.get_one(models.LinkedCourse, linked_course_id)
+    for requirement in linked_course.requirements:
+        db.delete(requirement)
+
     delete_statement = delete(models.Requirement).where(
         models.Requirement.linked_course_id == linked_course_id
     )

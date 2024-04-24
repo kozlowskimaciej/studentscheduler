@@ -64,4 +64,4 @@ class Subject(SQLModel):
     id: int
     name: str
     status: SubjectStatus
-    requirements: list["Requirement"]
+    requirements: list[Requirement]

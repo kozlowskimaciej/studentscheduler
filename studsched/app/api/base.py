@@ -2,7 +2,8 @@
 
 from typing import Any
 from sqlmodel import Session
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm.exc import NoResultFound
 
 from ..db.queries import queries
 from ..db.session import engine
@@ -39,4 +40,10 @@ async def replace_requirements(
     requirements: list[models.RequirementCreate],
     db: Session = Depends(get_db),
 ):
-    queries.replace_requirements(db, subject_id, requirements)
+    try:
+        queries.replace_requirements(db, subject_id, requirements)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Subject with id {subject_id} not found",
+        )

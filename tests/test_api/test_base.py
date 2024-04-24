@@ -70,3 +70,18 @@ def test_replace_requirements(
         assert requirement["requirement_type"] == models.RequirementType.TOTAL
         assert requirement["threshold"] == 5
         assert requirement["threshold_type"] == models.ThresholdType.POINTS
+
+
+def test_replace_requirements_invalid_subject(
+    app: FastAPI,
+    test_client: TestClient,
+    db_session: Session,
+):
+    app.dependency_overrides[get_db] = lambda: db_session
+
+    invalid_linked_course_id = 234
+
+    res = test_client.put(
+        f"/api/v1/subjects/{invalid_linked_course_id}/requirements", json=[]
+    )
+    assert res.status_code == status.HTTP_404_NOT_FOUND
