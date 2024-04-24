@@ -9,6 +9,7 @@ from ..db.session import engine
 from ..version import __version__
 from ..db.models.models import (
     RequirementCreate,
+    RequirementUpdate,
     VersionResponse,
     Subject,
 )
@@ -48,3 +49,13 @@ async def add_requirements(
         queries.add_requirement(db, requirement, subject_id)
         for requirement in requirements
     ]
+
+
+@base_router.put("/subjects/{subject_id}/requirements/{requirement_id}")
+async def update_requirement(
+    subject_id: int,
+    requirement_id: int,
+    requirement: RequirementUpdate,
+    db: Session = Depends(get_db),
+):
+    queries.update_requirement(db, requirement_id, requirement)

@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
+from fastapi import FastAPI
 
 # from studsched.main import create_application
 from studsched.app.api.base import get_db
@@ -76,3 +77,26 @@ def test_add_requirements(app, test_client: TestClient, filled_db: Session):
     assert requirement["threshold"] == 50
     assert requirement["threshold_type"] == ThresholdType.PERCENT
     assert requirement["id"]
+
+
+def test_update_requirement(
+    app: FastAPI, test_client: TestClient, filled_db: Session
+):
+    app.dependency_overrides[get_db] = lambda: filled_db
+
+    subjects = test_client.get("/api/v1/subjects").json()
+    subject = subjects[0]
+    requirement = subject["requirements"][0]
+    assert requirement["threshold"] == 5
+
+    requirement["threshold"] = 10
+    res = test_client.put(
+        f"/api/v1/subjects/{subject['id']}/requirements/{requirement['id']}",
+        json=requirement,
+    )
+    assert res.status_code == 200
+
+    subjects = test_client.get("/api/v1/subjects").json()
+    subject = subjects[0]
+    requirement = subject["requirements"][0]
+    assert requirement["threshold"] == 10
