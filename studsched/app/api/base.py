@@ -1,6 +1,6 @@
 """Endpoints for getting version information."""
 
-from typing import Any
+from typing import Any, Annotated
 from sqlmodel import Session
 from fastapi import APIRouter, Depends, Request
 
@@ -32,9 +32,12 @@ def get_current_user(request: Request):
     return request.session["user"]
 
 
+DatabaseDep = Annotated[Session, Depends(get_db)]
+CurrentUserDep = Annotated[models.User, Depends(get_current_user)]
+
+
 @base_router.get("/subjects", response_model=list[models.Subject])
-async def subjects(request: Request) -> Any:
-    user = get_current_user(request)
+async def subjects(user: CurrentUserDep):
     return queries.get_subjects(user)
 
 
@@ -42,7 +45,7 @@ async def subjects(request: Request) -> Any:
 async def add_requirements(
     requirements: list[models.RequirementCreate],
     subject_id: int,
-    db: Session = Depends(get_db),
+    db: DatabaseDep,
 ):
     """Adds new requirement for a given subject"""
     return [

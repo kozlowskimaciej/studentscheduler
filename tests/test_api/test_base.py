@@ -3,19 +3,17 @@ from fastapi import FastAPI
 from sqlmodel import Session
 import pytest
 
-from studsched.app.api.base import get_db
+from studsched.app.api.base import get_db, get_current_user
 from studsched.app.version import __version__
 from studsched.app.db.models import models
 
 
 @pytest.fixture(autouse=True)
 def mock_current_user(
+    app: FastAPI,
     user: models.User,
-    monkeypatch,
 ):
-    monkeypatch.setattr(
-        "studsched.app.api.base.get_current_user", lambda _: user
-    )
+    app.dependency_overrides[get_current_user] = lambda: user
 
 
 @pytest.fixture

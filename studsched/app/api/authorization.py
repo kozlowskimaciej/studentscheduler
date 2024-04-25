@@ -1,12 +1,11 @@
 from authlib.integrations.starlette_client.apps import StarletteOAuth1App
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session
 from datetime import datetime
 
 from ..db.models import models
 from ..db.queries import queries
-from .base import get_db
+from .base import DatabaseDep
 
 authorization_router = APIRouter()
 
@@ -22,7 +21,7 @@ async def login(request: Request):
 
 
 @authorization_router.get("/auth")
-async def auth(request: Request, db: Session = Depends(get_db)):
+async def auth(request: Request, db: DatabaseDep):
     usos: StarletteOAuth1App = request.app.oauth.create_client("usos")
 
     token = await usos.authorize_access_token(request)
