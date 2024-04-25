@@ -128,5 +128,5 @@ class UserInfo(SQLModel):
     Used to add all necessary data after the user logs in.
     """
 
-    user: User
+    user: UserCreate
     courses: list[CourseCreate]

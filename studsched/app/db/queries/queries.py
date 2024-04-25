@@ -31,16 +31,17 @@ def get_subjects(db: Session, user_id: int) -> list[models.Subject]:
 def add_user_info(db: Session, user_info: models.UserInfo):
     """Adds information about students and his/her courses"""
 
-    db.add(user_info.user)
+    db_user = models.User(**user_info.user.model_dump())
+    db.add(db_user)
 
     for course in user_info.courses:
         db_course = models.Course(**course.model_dump())
         db.add(db_course)
         linked_course = models.LinkedCourse(
-            user=user_info.user,
+            user=db_user,
             course=db_course,
         )
         db.add(linked_course)
 
     db.commit()
-    db.refresh(user_info.user)
+    return db_user
