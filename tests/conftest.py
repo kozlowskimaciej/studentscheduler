@@ -48,7 +48,7 @@ def course():
 
 
 @pytest.fixture
-def db_session(
+def db_with_user(
     empty_db: Session,
     user: models.User,
 ):
@@ -79,15 +79,15 @@ def requirement(
 
 
 @pytest.fixture
-def filled_db(
-    db_session: Session,
+def db_with_courses(
+    db_with_user: Session,
     course: models.Course,
     linked_course: models.LinkedCourse,
     requirement: models.Requirement,
 ):
-    db_session.add(course)
-    db_session.add(linked_course)
-    db_session.add(requirement)
-    db_session.commit()
+    db_with_user.add(course)
+    db_with_user.add(linked_course)
+    db_with_user.add(requirement)
+    db_with_user.commit()
 
-    yield db_session
+    yield db_with_user

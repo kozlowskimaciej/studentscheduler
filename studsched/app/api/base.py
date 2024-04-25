@@ -7,11 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from ..db.queries import queries
 from ..db.session import engine
 from ..version import __version__
-from ..db.models.models import (
-    RequirementCreate,
-    VersionResponse,
-    Subject,
-)
+from ..db.models import models
 
 base_router = APIRouter()
 
@@ -21,7 +17,7 @@ def get_db():
         yield session
 
 
-@base_router.get("/version", response_model=VersionResponse)
+@base_router.get("/version", response_model=models.VersionResponse)
 async def version() -> Any:
     """Provide version information about the web service.
 
@@ -29,14 +25,14 @@ async def version() -> Any:
     Returns:
         VersionResponse: A json response containing the version number.
     """
-    return VersionResponse(version=__version__)
+    return models.VersionResponse(version=__version__)
 
 
 def get_current_user(request: Request):
     return request.session["user"]
 
 
-@base_router.get("/subjects", response_model=list[Subject])
+@base_router.get("/subjects", response_model=list[models.Subject])
 async def subjects(request: Request) -> Any:
     user = get_current_user(request)
     return queries.get_subjects(user)
@@ -44,7 +40,7 @@ async def subjects(request: Request) -> Any:
 
 @base_router.post("/subjects/{subject_id}/requirements")
 async def add_requirements(
-    requirements: list[RequirementCreate],
+    requirements: list[models.RequirementCreate],
     subject_id: int,
     db: Session = Depends(get_db),
 ):
