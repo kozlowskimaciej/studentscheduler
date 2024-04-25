@@ -50,6 +50,8 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
+    linked_courses: list["LinkedCourse"] = Relationship(back_populates="user")
+
 
 class UserCreate(UserBase):
     "Model for creating new user"
@@ -73,11 +75,21 @@ class CourseCreate(CourseBase):
 class Course(CourseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
+    linked_courses: list["LinkedCourse"] = Relationship(
+        back_populates="course"
+    )
+
 
 class LinkedCourse(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    course_id: int = Field(foreign_key="course.id")
 
-    requirements: list["Requirement"] = Relationship(back_populates="course")
+    user: User = Relationship(back_populates="linked_courses")
+    course: Course = Relationship(back_populates="linked_courses")
+    requirements: list["Requirement"] = Relationship(
+        back_populates="linked_course"
+    )
 
 
 class RequirementBase(SQLModel):
@@ -89,9 +101,9 @@ class RequirementBase(SQLModel):
 
 class Requirement(RequirementBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    linked_course_id: int = Field(default=None, foreign_key="linkedcourse.id")
+    linked_course_id: int = Field(foreign_key="linkedcourse.id")
 
-    course: LinkedCourse = Relationship(back_populates="requirements")
+    linked_course: LinkedCourse = Relationship(back_populates="requirements")
 
 
 class RequirementCreate(RequirementBase):
@@ -99,6 +111,11 @@ class RequirementCreate(RequirementBase):
 
 
 class Subject(SQLModel):
+    """
+    Model for retrieving data about a subject.
+    It is not even reflected in any database table.
+    """
+
     id: int
     name: str
     status: SubjectStatus
@@ -106,7 +123,10 @@ class Subject(SQLModel):
 
 
 class UserInfo(SQLModel):
-    """User with his/her courses"""
+    """
+    User with his/her courses.
+    Used to add all necessary data after the user logs in.
+    """
 
     user: User
     courses: list[CourseCreate]

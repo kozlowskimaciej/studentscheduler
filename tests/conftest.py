@@ -1,5 +1,6 @@
 from sqlmodel import Session, SQLModel
 from fastapi.testclient import TestClient
+from datetime import datetime
 import pytest
 
 from studsched.app.application import create_application
@@ -19,7 +20,7 @@ def test_client(app):
 
 
 @pytest.fixture
-def db_session():
+def empty_db():
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         yield session
@@ -29,19 +30,64 @@ def db_session():
 
 
 @pytest.fixture
-def filled_db(db_session: Session):
-    linked_course = models.LinkedCourse()
-    db_session.add(linked_course)
-    db_session.commit()
-    db_session.refresh(linked_course)
+def user():
+    return models.User(
+        first_name="Bob",
+        last_name="Rob",
+        email="bob@rob.com",
+        last_login=datetime.fromtimestamp(0),
+    )
 
-    requirement = models.Requirement(
+
+@pytest.fixture
+def course():
+    return models.Course(
+        name="zprp",
+        code="103A-INSZI-ISP-ZPRP",
+    )
+
+
+@pytest.fixture
+def db_session(
+    empty_db: Session,
+    user: models.User,
+):
+    empty_db.add(user)
+    empty_db.commit()
+    yield empty_db
+
+
+@pytest.fixture
+def linked_course(
+    user: models.User,
+    course: models.Course,
+):
+    return models.LinkedCourse(user=user, course=course)
+
+
+@pytest.fixture
+def requirement(
+    linked_course: models.LinkedCourse,
+):
+    return models.Requirement(
         task_type=models.TaskType.LAB,
         requirement_type=models.RequirementType.TOTAL,
         threshold=5,
         threshold_type=models.ThresholdType.POINTS,
-        linked_course_id=linked_course.id,
+        linked_course=linked_course,
     )
+
+
+@pytest.fixture
+def filled_db(
+    db_session: Session,
+    course: models.Course,
+    linked_course: models.LinkedCourse,
+    requirement: models.Requirement,
+):
+    db_session.add(course)
+    db_session.add(linked_course)
     db_session.add(requirement)
     db_session.commit()
+
     yield db_session

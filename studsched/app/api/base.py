@@ -2,7 +2,7 @@
 
 from typing import Any
 from sqlmodel import Session
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from ..db.queries import queries
 from ..db.session import engine
@@ -32,9 +32,14 @@ async def version() -> Any:
     return VersionResponse(version=__version__)
 
 
+def get_current_user_id(request: Request):
+    return request.session["user_id"]
+
+
 @base_router.get("/subjects", response_model=list[Subject])
-async def subjects(db: Session = Depends(get_db)) -> Any:
-    return queries.get_subjects(db)
+async def subjects(request: Request, db: Session = Depends(get_db)) -> Any:
+    user_id = get_current_user_id(request)
+    return queries.get_subjects(db, user_id)
 
 
 @base_router.post("/subjects/{subject_id}/requirements")

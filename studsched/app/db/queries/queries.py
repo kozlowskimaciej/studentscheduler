@@ -15,28 +15,32 @@ def add_requirement(
     return db_requirement
 
 
-def get_subjects(db: Session) -> list[models.Subject]:
-    statement = select(models.LinkedCourse)
-    linked_courses = db.exec(statement).all()
+def get_subjects(db: Session, user_id: int) -> list[models.Subject]:
+    user = db.get_one(models.User, user_id)
     return [
         models.Subject(
             **linked_course.model_dump(),
-            name="Subject",
+            name=linked_course.course.name,
             status=models.SubjectStatus.IN_PROGRESS,
             requirements=linked_course.requirements
         )
-        for linked_course in linked_courses
+        for linked_course in user.linked_courses
     ]
 
 
 def add_user_info(db: Session, user_info: models.UserInfo):
     """Adds information about students and his/her courses"""
 
-    user = models.User(**user_info.user.model_dump())
-    db.add(user)
+    db.add(user_info.user)
 
     for course in user_info.courses:
-        db.add(models.Course(**course.model_dump()))
-        linked_course = models.LinkedCourse()
+        db_course = models.Course(**course.model_dump())
+        db.add(db_course)
+        linked_course = models.LinkedCourse(
+            user=user_info.user,
+            course=db_course,
+        )
         db.add(linked_course)
+
     db.commit()
+    db.refresh(user_info.user)
