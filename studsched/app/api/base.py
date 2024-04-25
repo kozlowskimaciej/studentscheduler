@@ -32,14 +32,14 @@ async def version() -> Any:
     return VersionResponse(version=__version__)
 
 
-def get_current_user_id(request: Request):
-    return request.session["user_id"]
+def get_current_user(request: Request):
+    return request.session["user"]
 
 
 @base_router.get("/subjects", response_model=list[Subject])
-async def subjects(request: Request, db: Session = Depends(get_db)) -> Any:
-    user_id = get_current_user_id(request)
-    return queries.get_subjects(db, user_id)
+async def subjects(request: Request) -> Any:
+    user = get_current_user(request)
+    return queries.get_subjects(user)
 
 
 @base_router.post("/subjects/{subject_id}/requirements")

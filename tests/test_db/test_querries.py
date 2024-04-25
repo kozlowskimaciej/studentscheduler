@@ -2,15 +2,18 @@ from sqlmodel import Session
 from studsched.app.db.queries.queries import get_subjects, add_user_info
 from studsched.app.db.models import models
 from datetime import datetime
+import pytest
 
 
-def test_get_subjects_empty(db_session: Session, user: models.User):
-    res = get_subjects(db_session, user.id)
+@pytest.mark.usefixtures("db_session")
+def test_get_subjects_empty(user: models.User):
+    res = get_subjects(user)
     assert res == []
 
 
-def test_get_subjects(filled_db: Session, user: models.User):
-    res = get_subjects(filled_db, user_id=user.id)
+@pytest.mark.usefixtures("filled_db")
+def test_get_subjects(user: models.User):
+    res = get_subjects(user)
     assert len(res) == 1
 
 
@@ -28,6 +31,6 @@ def test_add_user_info(empty_db: Session):
     )
 
     db_user = add_user_info(empty_db, user_info)
-    subjects = get_subjects(empty_db, user_id=db_user.id)
+    subjects = get_subjects(db_user)
 
     assert len(subjects) == 1

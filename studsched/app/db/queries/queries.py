@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from ...db.models import models
 
@@ -15,8 +15,7 @@ def add_requirement(
     return db_requirement
 
 
-def get_subjects(db: Session, user_id: int) -> list[models.Subject]:
-    user = db.get_one(models.User, user_id)
+def get_subjects(user: models.User) -> list[models.Subject]:
     return [
         models.Subject(
             **linked_course.model_dump(),

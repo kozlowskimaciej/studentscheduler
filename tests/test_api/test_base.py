@@ -28,7 +28,7 @@ def test_subjects_empty(
 ):
     app.dependency_overrides[get_db] = lambda: db_session
     monkeypatch.setattr(
-        "studsched.app.api.base.get_current_user_id", lambda _: user.id
+        "studsched.app.api.base.get_current_user", lambda _: user
     )
 
     response = test_client.get("/api/v1/subjects")
@@ -46,7 +46,7 @@ def test_subjects(
 ):
     app.dependency_overrides[get_db] = lambda: filled_db
     monkeypatch.setattr(
-        "studsched.app.api.base.get_current_user_id", lambda _: user.id
+        "studsched.app.api.base.get_current_user", lambda _: user
     )
 
     response = test_client.get("/api/v1/subjects")
@@ -76,7 +76,7 @@ def test_add_requirements(
 ):
     app.dependency_overrides[get_db] = lambda: filled_db
     monkeypatch.setattr(
-        "studsched.app.api.base.get_current_user_id", lambda _: user.id
+        "studsched.app.api.base.get_current_user", lambda _: user
     )
 
     response = test_client.post(
