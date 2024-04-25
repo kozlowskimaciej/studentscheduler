@@ -51,7 +51,7 @@ class RequirementBase(SQLModel):
 
 class Requirement(RequirementBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    linked_course_id: int = Field(default=None, foreign_key="linkedcourse.id")
+    linked_course_id: int = Field(foreign_key="linkedcourse.id")
 
     course: LinkedCourse = Relationship(back_populates="requirements")
 
