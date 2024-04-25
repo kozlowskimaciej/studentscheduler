@@ -9,11 +9,14 @@ from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import SQLModel, text
 from .api import api_router
 from .events.base import logger
+from .chat.chat import create_chat_service
+from .events import startup_handler, shutdown_handler
 from .configs import get_settings
 from .db import engine
 from .middlewares import log_time
 from .version import __version__
 import pathlib
+from functools import partial
 from contextlib import asynccontextmanager
 from authlib.integrations.starlette_client import OAuth
 
@@ -59,6 +62,8 @@ def create_application() -> FastAPI:
         object of FastAPI: the fastapi application instance.
     """
     settings = get_settings()
+    chat_service = create_chat_service(settings.REDIS_URL)
+
     application = FastAPI(
         title=settings.PROJECT_NAME,
         debug=settings.DEBUG,
@@ -80,6 +85,10 @@ def create_application() -> FastAPI:
 
     # add defined routers
     application.include_router(api_router, prefix=settings.API_STR)
+
+    # event handler
+    application.add_event_handler("startup", startup_handler)
+    application.add_event_handler("shutdown", partial(shutdown_handler, chat_service))
 
     # load logging config
     logging.config.dictConfig(settings.LOGGING_CONFIG)
