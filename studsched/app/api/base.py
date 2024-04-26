@@ -2,7 +2,7 @@
 
 from typing import Any, Annotated
 from sqlmodel import Session
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request, HTTPException, status, Depends
 
 from ..db.session import engine
 from ..version import __version__
@@ -32,8 +32,8 @@ DatabaseDep = Annotated[Session, Depends(get_db)]
 
 
 def get_current_user(request: Request, db: DatabaseDep):
-    user_id = request.session["user_id"]
-    return db.get_one(models.User, user_id)
+    user_id = request.session.get("user_id")
+    return db.get(models.User, user_id)
 
 
 CurrentUserDep = Annotated[models.User, Depends(get_current_user)]
@@ -41,6 +41,10 @@ CurrentUserDep = Annotated[models.User, Depends(get_current_user)]
 
 @base_router.get("/subjects", response_model=list[models.Subject])
 async def subjects(user: CurrentUserDep):
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="No current user"
+        )
     return queries.get_subjects(user)
 
 

@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from sqlmodel import Session
 import pytest
 
@@ -8,7 +8,7 @@ from studsched.app.version import __version__
 from studsched.app.db.models import models
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_current_user(
     app: FastAPI,
     user: models.User,
@@ -38,8 +38,8 @@ def test_get_version(test_client: TestClient):
     assert response.json() == {"version": __version__}
 
 
-@pytest.mark.usefixtures("mock_db_with_user")
-def test_subjects_empty(
+@pytest.mark.usefixtures("mock_db_with_user", "mock_current_user")
+def test_get_subjects_empty(
     test_client: TestClient,
 ):
     response = test_client.get("/api/v1/subjects")
@@ -48,8 +48,8 @@ def test_subjects_empty(
     assert len(res) == 0
 
 
-@pytest.mark.usefixtures("mock_db_with_courses")
-def test_subjects(
+@pytest.mark.usefixtures("mock_db_with_courses", "mock_current_user")
+def test_get_subjects(
     test_client: TestClient,
 ):
     response = test_client.get("/api/v1/subjects")
@@ -71,6 +71,14 @@ def test_subjects(
 
 
 @pytest.mark.usefixtures("mock_db_with_courses")
+def test_get_subjects_no_current_user(
+    test_client: TestClient,
+):
+    response = test_client.get("/api/v1/subjects")
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.usefixtures("mock_db_with_courses", "mock_current_user")
 def test_add_requirements(
     test_client: TestClient,
 ):
