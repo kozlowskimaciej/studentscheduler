@@ -1,6 +1,7 @@
 from sqlmodel import Session, SQLModel
 from fastapi.testclient import TestClient
 from datetime import datetime
+from freezegun import freeze_time
 import pytest
 
 from studsched.app.application import create_application
@@ -30,20 +31,21 @@ def empty_db():
 
 
 @pytest.fixture
+@freeze_time("1970-01-01")
 def user():
     return models.User(
-        index="31286",
+        index="312836",
         first_name="Bob",
         last_name="Rob",
         email="bob@rob.com",
-        last_login=datetime.fromtimestamp(0),
+        last_login=datetime.now(),
     )
 
 
 @pytest.fixture
 def course():
     return models.Course(
-        name="zprp",
+        name="Zaawansowane Programowanie w Pythonie",
         code="103A-INSZI-ISP-ZPRP",
     )
 

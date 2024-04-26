@@ -59,7 +59,7 @@ def test_subjects(
 
     subject = res[0]
     assert subject["id"] == 1
-    assert subject["name"] == "zprp"
+    assert subject["name"] == "Zaawansowane Programowanie w Pythonie"
     assert subject["status"] == models.SubjectStatus.IN_PROGRESS
     assert len(subject["requirements"]) == 1
 
