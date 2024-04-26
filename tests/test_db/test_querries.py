@@ -7,13 +7,19 @@ import pytest
 @pytest.mark.usefixtures("db_with_user")
 def test_get_subjects_empty(user: models.User):
     res = get_subjects(user)
-    assert res == []
+    assert len(res) == 0
 
 
 @pytest.mark.usefixtures("db_with_courses")
 def test_get_subjects(user: models.User):
     res = get_subjects(user)
     assert len(res) == 1
+
+
+@pytest.mark.usefixtures("empty_db")
+def test_get_subjects_nonexistent_user(user: models.User):
+    res = get_subjects(user)
+    assert len(res) == 0
 
 
 def test_add_user_info(
