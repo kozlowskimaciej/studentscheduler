@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from ...db.models import models
 
@@ -30,8 +30,14 @@ def get_subjects(user: models.User) -> list[models.Subject]:
 def add_user_info(db: Session, user_info: models.UserInfo):
     """Adds information about students and his/her courses"""
 
-    db_user = models.User(**user_info.user.model_dump())
-    db.add(db_user)
+    user_select = select(models.User).where(
+        models.User.index == user_info.user.index
+    )
+    db_user = db.exec(user_select).first()
+
+    if db_user is None:
+        db_user = models.User(**user_info.user.model_dump())
+        db.add(db_user)
 
     for course in user_info.courses:
         db_course = models.Course(**course.model_dump())

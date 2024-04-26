@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 from studsched.app.db.queries.queries import get_subjects, add_user_info
 from studsched.app.db.models import models
 import pytest
@@ -30,3 +30,19 @@ def test_add_user_info(
     subjects = get_subjects(db_user)
 
     assert len(subjects) == 1
+
+
+def test_add_user_info_to_existing_one(
+    db_with_courses: Session,
+    user: models.User,
+    course: models.Course,
+):
+    user_info = models.UserInfo(
+        user=user,
+        courses=[course],
+    )
+
+    add_user_info(db_with_courses, user_info)
+
+    db_users = db_with_courses.exec(select(models.User)).all()
+    assert len(db_users) == 1

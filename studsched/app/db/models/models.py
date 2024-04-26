@@ -1,6 +1,6 @@
 """Sqlmodel models"""
 
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional
 from datetime import datetime
 
@@ -40,7 +40,7 @@ class VersionResponse(SQLModel):
 class UserBase(SQLModel):
     """A student"""
 
-    index: str
+    index: str = Field(sa_column_kwargs={"unique": True})
     first_name: str
     middle_names: Optional[str] = None
     last_name: str
