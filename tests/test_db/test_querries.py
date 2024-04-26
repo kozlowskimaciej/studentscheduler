@@ -30,6 +30,10 @@ def test_add_user_info(
     subjects = get_subjects(db_user)
 
     assert len(subjects) == 1
+    subject = subjects[0]
+    assert subject.name == "Zaawansowane Programowanie w Pythonie"
+    assert subject.status == models.SubjectStatus.IN_PROGRESS
+    assert len(subject.requirements) == 0
 
 
 def test_add_user_info_to_existing_one(
