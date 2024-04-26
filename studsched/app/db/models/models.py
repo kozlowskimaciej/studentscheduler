@@ -66,7 +66,7 @@ class CourseBase(SQLModel):
     """A course that students can take"""
 
     name: str
-    code: str
+    code: str = Field(sa_column_kwargs={"unique": True})
 
 
 class CourseCreate(CourseBase):

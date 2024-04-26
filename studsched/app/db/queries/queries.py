@@ -40,8 +40,15 @@ def add_user_info(db: Session, user_info: models.UserInfo):
         db.add(db_user)
 
     for course in user_info.courses:
-        db_course = models.Course(**course.model_dump())
-        db.add(db_course)
+        course_select = select(models.Course).where(
+            models.Course.code == course.code
+        )
+        db_course = db.exec(course_select).first()
+
+        if db_course is None:
+            db_course = models.Course(**course.model_dump())
+            db.add(db_course)
+
         linked_course = models.LinkedCourse(
             user=db_user,
             course=db_course,
