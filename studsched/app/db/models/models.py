@@ -58,10 +58,6 @@ class UserCreate(UserBase):
     "Model for creating new user"
 
 
-class UserPublic(UserBase):
-    id: int
-
-
 class CourseBase(SQLModel):
     """A course that students can take"""
 
