@@ -49,11 +49,19 @@ def add_user_info(db: Session, user_info: models.UserInfo):
             db_course = models.Course(**course.model_dump())
             db.add(db_course)
 
-        linked_course = models.LinkedCourse(
-            user=db_user,
-            course=db_course,
+        select_linked_course = (
+            select(models.LinkedCourse)
+            .where(models.LinkedCourse.user_id == db_user.id)
+            .where(models.LinkedCourse.course_id == db_course.id)
         )
-        db.add(linked_course)
+        db_linked_course = db.exec(select_linked_course).first()
+
+        if db_linked_course is None:
+            linked_course = models.LinkedCourse(
+                user=db_user,
+                course=db_course,
+            )
+            db.add(linked_course)
 
     db.commit()
     return db_user

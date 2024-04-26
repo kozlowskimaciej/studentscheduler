@@ -49,3 +49,6 @@ def test_add_user_info_to_existing_one(
 
     db_courses = db_with_courses.exec(select(models.Course)).all()
     assert len(db_courses) == 1
+
+    db_linked_courses = db_with_courses.exec(select(models.LinkedCourse)).all()
+    assert len(db_linked_courses) == 1
