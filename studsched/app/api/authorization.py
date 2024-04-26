@@ -51,7 +51,7 @@ async def auth(request: Request, db: DatabaseDep):
 
     user_info = models.UserInfo(user=user, courses=courses)
     db_user = queries.add_user_info(db, user_info)
-    request.session["user"] = db_user
+    request.session["user_id"] = db_user.id
 
     url = request.url_for("subjects")
     return RedirectResponse(url=url)

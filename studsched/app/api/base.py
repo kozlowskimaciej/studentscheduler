@@ -4,10 +4,10 @@ from typing import Any, Annotated
 from sqlmodel import Session
 from fastapi import APIRouter, Depends, Request
 
-from ..db.queries import queries
 from ..db.session import engine
 from ..version import __version__
 from ..db.models import models
+from ..db.queries import queries
 
 base_router = APIRouter()
 
@@ -28,11 +28,14 @@ async def version() -> Any:
     return models.VersionResponse(version=__version__)
 
 
-def get_current_user(request: Request):
-    return request.session["user"]
-
-
 DatabaseDep = Annotated[Session, Depends(get_db)]
+
+
+def get_current_user(request: Request, db: DatabaseDep):
+    user_id = request.session["user_id"]
+    return db.get_one(models.User, user_id)
+
+
 CurrentUserDep = Annotated[models.User, Depends(get_current_user)]
 
 
