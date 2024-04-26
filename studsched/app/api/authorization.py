@@ -35,6 +35,7 @@ async def auth(request: Request, db: DatabaseDep):
         token=token,
     )
     user = user.json()
+    user["index"] = user.pop("student_number")
     user["last_login"] = datetime.now()
 
     courses = await usos.get(

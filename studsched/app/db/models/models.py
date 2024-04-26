@@ -40,6 +40,7 @@ class VersionResponse(SQLModel):
 class UserBase(SQLModel):
     """A student"""
 
+    index: str
     first_name: str
     middle_names: Optional[str] = None
     last_name: str

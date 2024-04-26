@@ -32,6 +32,7 @@ def empty_db():
 @pytest.fixture
 def user():
     return models.User(
+        index="31286",
         first_name="Bob",
         last_name="Rob",
         email="bob@rob.com",
