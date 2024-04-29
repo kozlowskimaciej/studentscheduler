@@ -47,3 +47,18 @@ async def replace_requirements(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Subject with id {subject_id} not found",
         )
+
+
+@base_router.put("/subjects/{subject_id}/tasks")
+async def replace_tasks(
+        subject_id: int,
+        tasks: list[models.TaskCreate],
+        db: Session = Depends(get_db),
+):
+    try:
+        queries.replace_tasks(db, subject_id, tasks)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Subject with id {subject_id} not found",
+        )

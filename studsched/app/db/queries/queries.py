@@ -30,6 +30,33 @@ def replace_requirements(
     db.commit()
 
 
+def replace_tasks(
+        db: Session,
+        linked_course_id: int,
+        new_tasks: list[models.TaskCreate],
+):
+    """Replace all subject's requirements with new ones"""
+
+    linked_course = db.get_one(models.LinkedCourse, linked_course_id)
+    for task in linked_course.tasks:
+        db.delete(task)
+
+    delete_statement = delete(models.Task).where(
+        models.Task.linked_course_id == linked_course_id
+    )
+    db.exec(delete_statement)
+
+    db.add_all(
+        models.Task(
+            **task.model_dump(),
+            linked_course_id=linked_course_id,
+        )
+        for task in new_tasks
+    )
+
+    db.commit()
+
+
 def get_subjects(db: Session):
     statement = select(models.LinkedCourse)
     linked_courses = db.exec(statement).all()
@@ -39,6 +66,7 @@ def get_subjects(db: Session):
             name="Subject",
             status=models.SubjectStatus.IN_PROGRESS,
             requirements=linked_course.requirements,
+            tasks=linked_course.tasks,
         )
         for linked_course in linked_courses
     ]
