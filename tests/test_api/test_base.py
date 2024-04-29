@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 from fastapi import FastAPI, status
+import pytest
 
 from studsched.app.api.base import get_db
 from studsched.app.version import __version__
@@ -72,16 +73,18 @@ def test_replace_requirements(
         assert requirement["threshold_type"] == models.ThresholdType.POINTS
 
 
-def test_replace_requirements_invalid_subject(
+@pytest.mark.parametrize('endpoint', {'requirements', 'tasks'})
+def test_replace_invalid_subject(
     app: FastAPI,
     test_client: TestClient,
     db_session: Session,
+    endpoint
 ):
     app.dependency_overrides[get_db] = lambda: db_session
 
     invalid_linked_course_id = 234
 
     res = test_client.put(
-        f"/api/v1/subjects/{invalid_linked_course_id}/requirements", json=[]
+        f"/api/v1/subjects/{invalid_linked_course_id}/{endpoint}", json=[]
     )
     assert res.status_code == status.HTTP_404_NOT_FOUND
