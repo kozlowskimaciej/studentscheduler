@@ -79,34 +79,41 @@ def test_get_subjects_no_current_user(
 
 
 @pytest.mark.usefixtures("mock_db_with_courses", "mock_current_user")
-def test_add_requirements(
+def test_replace_requirements(
     test_client: TestClient,
+    linked_course: models.LinkedCourse,
+    requirement: models.Requirement,
 ):
+    subjects = test_client.get("/api/v1/subjects").json()
+    requirements = subjects[0]["requirements"]
+    assert len(requirements) == 1
 
-    response = test_client.post(
-        "/api/v1/subjects/1/requirements",
-        json=[
-            {
-                "task_type": models.TaskType.EXAM,
-                "requirement_type": models.RequirementType.SEPARATELY,
-                "threshold": 50,
-                "threshold_type": models.ThresholdType.PERCENT,
-            }
-        ],
+    requirement_update = models.RequirementCreate(**requirement.model_dump())
+    res = test_client.put(
+        f"/api/v1/subjects/{linked_course.id}/requirements",
+        json=[requirement_update.model_dump()] * 2,
     )
-    assert response.status_code == 200
+    assert res.status_code == status.HTTP_200_OK
 
-    response = test_client.get("/api/v1/subjects")
-    assert response.status_code == 200
-    res = response.json()
+    subjects = test_client.get("/api/v1/subjects").json()
+    requirements = subjects[0]["requirements"]
+    assert len(requirements) == 2
 
-    assert len(res) == 1
-    subject = res[0]
-    assert len(subject["requirements"]) == 2
+    for requirement in requirements:
+        assert requirement["task_type"] == models.TaskType.LAB
+        assert requirement["requirement_type"] == models.RequirementType.TOTAL
+        assert requirement["threshold"] == 5
+        assert requirement["threshold_type"] == models.ThresholdType.POINTS
 
-    requirement = subject["requirements"][1]
-    assert requirement["task_type"] == models.TaskType.EXAM
-    assert requirement["requirement_type"] == models.RequirementType.SEPARATELY
-    assert requirement["threshold"] == 50
-    assert requirement["threshold_type"] == models.ThresholdType.PERCENT
-    assert requirement["id"]
+
+@pytest.mark.usefixtures("mock_db_with_courses")
+@pytest.mark.parametrize("endpoint", {"requirements", "tasks"})
+def test_replace_invalid_subject(
+    app: FastAPI, test_client: TestClient, endpoint
+):
+    invalid_linked_course_id = 234
+
+    res = test_client.put(
+        f"/api/v1/subjects/{invalid_linked_course_id}/{endpoint}", json=[]
+    )
+    assert res.status_code == status.HTTP_404_NOT_FOUND

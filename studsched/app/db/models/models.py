@@ -3,7 +3,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional
 from datetime import datetime
-
 from enum import IntEnum, auto
 
 
@@ -87,6 +86,7 @@ class LinkedCourse(SQLModel, table=True):
     requirements: list["Requirement"] = Relationship(
         back_populates="linked_course"
     )
+    tasks: list["Task"] = Relationship(back_populates="course")
 
 
 class RequirementBase(SQLModel):
@@ -107,6 +107,24 @@ class RequirementCreate(RequirementBase):
     """Model for creating new requirement"""
 
 
+class TaskBase(SQLModel):
+    task_type: TaskType
+    max_points: int
+    points: int
+    deadline: datetime
+
+
+class Task(TaskBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    linked_course_id: int = Field(foreign_key="linkedcourse.id")
+
+    course: LinkedCourse = Relationship(back_populates="tasks")
+
+
+class TaskCreate(TaskBase):
+    """Model for creating new tasks"""
+
+
 class Subject(SQLModel):
     """
     Model for retrieving data about a subject.
@@ -117,6 +135,7 @@ class Subject(SQLModel):
     name: str
     status: SubjectStatus
     requirements: list[Requirement]
+    tasks: list[Task]
 
 
 class UserInfo(SQLModel):

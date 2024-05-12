@@ -69,9 +69,7 @@ def linked_course(
 
 
 @pytest.fixture
-def requirement(
-    linked_course: models.LinkedCourse,
-):
+def requirement(linked_course: models.LinkedCourse):
     return models.Requirement(
         task_type=models.TaskType.LAB,
         requirement_type=models.RequirementType.TOTAL,

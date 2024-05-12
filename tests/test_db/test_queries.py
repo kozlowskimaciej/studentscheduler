@@ -1,7 +1,12 @@
 from sqlmodel import Session, select
-from studsched.app.db.queries.queries import get_subjects, add_user_info
+from studsched.app.db.queries.queries import (
+    get_subjects,
+    replace_requirements,
+    add_user_info,
+)
 from studsched.app.db.models import models
 import pytest
+from sqlalchemy.orm.exc import NoResultFound
 
 
 @pytest.mark.usefixtures("db_with_user")
@@ -20,6 +25,51 @@ def test_get_subjects(user: models.User):
 def test_get_subjects_nonexistent_user(user: models.User):
     res = get_subjects(user)
     assert len(res) == 0
+
+
+def test_replace_requirements(
+    db_with_courses: Session,
+    linked_course: models.LinkedCourse,
+    requirement: models.Requirement,
+    user: models.User,
+):
+    subjects = get_subjects(user)
+    requirements = subjects[0].requirements
+    assert len(requirements) == 1
+
+    requirement_update = models.RequirementCreate(**requirement.model_dump())
+    replace_requirements(
+        db_with_courses, linked_course.id, [requirement_update] * 2
+    )
+
+    subjects = get_subjects(user)
+    requirements = subjects[0].requirements
+    assert len(requirements) == 2
+
+
+def test_delete_requirements(
+    user: models.User,
+    db_with_courses: Session,
+    linked_course: models.LinkedCourse,
+):
+    subjects = get_subjects(user)
+    requirements = subjects[0].requirements
+    assert len(requirements) == 1
+
+    replace_requirements(db_with_courses, linked_course.id, [])
+
+    subjects = get_subjects(user)
+    requirements = subjects[0].requirements
+    assert len(requirements) == 0
+
+
+def test_replace_requirements_invalid_linked_course(
+    empty_db: Session,
+):
+    invalid_linked_course_id = 234
+
+    with pytest.raises(NoResultFound):
+        replace_requirements(empty_db, invalid_linked_course_id, [])
 
 
 def test_add_user_info(
