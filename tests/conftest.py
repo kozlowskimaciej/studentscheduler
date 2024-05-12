@@ -29,12 +29,16 @@ def db_session():
 
 
 @pytest.fixture
-def filled_db(db_session: Session):
+def linked_course(db_session: Session):
     linked_course = models.LinkedCourse()
     db_session.add(linked_course)
     db_session.commit()
     db_session.refresh(linked_course)
+    return linked_course
 
+
+@pytest.fixture
+def requirement(db_session: Session, linked_course: models.LinkedCourse):
     requirement = models.Requirement(
         task_type=models.TaskType.LAB,
         requirement_type=models.RequirementType.TOTAL,
@@ -44,4 +48,9 @@ def filled_db(db_session: Session):
     )
     db_session.add(requirement)
     db_session.commit()
+    return requirement
+
+
+@pytest.fixture
+def filled_db(db_session: Session, linked_course, requirement):
     yield db_session
