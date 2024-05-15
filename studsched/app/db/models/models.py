@@ -1,9 +1,9 @@
 """Sqlmodel models"""
-from datetime import datetime
-from typing import Optional
-from enum import IntEnum, auto
 
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional
+from datetime import datetime
+from enum import IntEnum, auto
 
 
 class TaskType(IntEnum):
@@ -36,10 +36,56 @@ class VersionResponse(SQLModel):
     version: str
 
 
-class LinkedCourse(SQLModel, table=True):
+class UserBase(SQLModel):
+    """A student"""
+
+    index: str = Field(sa_column_kwargs={"unique": True})
+    first_name: str
+    middle_names: Optional[str] = None
+    last_name: str
+    email: str
+    last_login: datetime
+
+
+class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
-    requirements: list["Requirement"] = Relationship(back_populates="course")
+    linked_courses: list["LinkedCourse"] = Relationship(back_populates="user")
+
+
+class UserCreate(UserBase):
+    "Model for creating new user"
+
+
+class CourseBase(SQLModel):
+    """A course that students can take"""
+
+    name: str
+    code: str = Field(sa_column_kwargs={"unique": True})
+
+
+class CourseCreate(CourseBase):
+    """Model for creating new course"""
+
+
+class Course(CourseBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    linked_courses: list["LinkedCourse"] = Relationship(
+        back_populates="course"
+    )
+
+
+class LinkedCourse(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    course_id: int = Field(foreign_key="course.id")
+
+    user: User = Relationship(back_populates="linked_courses")
+    course: Course = Relationship(back_populates="linked_courses")
+    requirements: list["Requirement"] = Relationship(
+        back_populates="linked_course"
+    )
     tasks: list["Task"] = Relationship(back_populates="course")
 
 
@@ -54,7 +100,7 @@ class Requirement(RequirementBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     linked_course_id: int = Field(foreign_key="linkedcourse.id")
 
-    course: LinkedCourse = Relationship(back_populates="requirements")
+    linked_course: LinkedCourse = Relationship(back_populates="requirements")
 
 
 class RequirementCreate(RequirementBase):
@@ -80,8 +126,23 @@ class TaskCreate(TaskBase):
 
 
 class Subject(SQLModel):
+    """
+    Model for retrieving data about a subject.
+    It is not even reflected in any database table.
+    """
+
     id: int
     name: str
     status: SubjectStatus
     requirements: list[Requirement]
     tasks: list[Task]
+
+
+class UserInfo(SQLModel):
+    """
+    User with his/her courses.
+    Used to add all necessary data after the user logs in.
+    """
+
+    user: UserCreate
+    courses: list[CourseCreate]
