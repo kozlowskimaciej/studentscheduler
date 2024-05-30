@@ -1,28 +1,52 @@
 """Module containing FastAPI instance related functions and classes."""
+
 # mypy: ignore-errors
 import logging.config
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from sqlalchemy import text
+from starlette.middleware.sessions import SessionMiddleware
+from sqlmodel import SQLModel, text
 from .api import api_router
+from .events.base import logger
 from .configs import get_settings
-from .db import Base, engine
-from .events import startup_handler, shutdown_handler
+from .db import engine
 from .middlewares import log_time
 from .version import __version__
 import pathlib
+from contextlib import asynccontextmanager
+from authlib.integrations.starlette_client import OAuth
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    oauth = OAuth()
+    oauth.register(
+        name="usos",
+        client_id="TQbmzC4s3FSSBLd5gWkq",
+        client_secret="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
+        api_base_url="https://apps.usos.pw.edu.pl/",
+        request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email",
+        authorize_url="https://apps.usos.pw.edu.pl/services/oauth/authorize",
+        access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
+    )
+    app.oauth = oauth
+    logger.info("Starting up ...")
+    yield
+    logger.info("Shutting down ...")
 
 
 def create_db_tables():
     """Create all tables in database."""
-    Base.metadata.create_all(engine)
+    SQLModel.metadata.create_all(engine)
 
 
 def load_example_data(path: str):
     """Load example data to database."""
     with engine.connect() as con:
-        with open((pathlib.Path(__file__).parent) / path, encoding="utf-8") as file:
+        with open(
+            (pathlib.Path(__file__).parent) / path, encoding="utf-8"
+        ) as file:
             query = text(file.read())
             con.execute(query)
             con.commit()
@@ -35,17 +59,19 @@ def create_application() -> FastAPI:
         object of FastAPI: the fastapi application instance.
     """
     settings = get_settings()
-    application = FastAPI(title=settings.PROJECT_NAME,
-                          debug=settings.DEBUG,
-                          version=__version__,
-                          openapi_url=f"{settings.API_STR}/openapi.json")
+    application = FastAPI(
+        title=settings.PROJECT_NAME,
+        debug=settings.DEBUG,
+        version=__version__,
+        openapi_url=f"{settings.API_STR}/openapi.json",
+        lifespan=lifespan,
+    )
 
     # Set all CORS enabled origins
     if settings.CORS_ORIGINS:
         application.add_middleware(
             CORSMiddleware,
-            allow_origins=[str(origin) for origin in
-                           settings.CORS_ORIGINS],
+            allow_origins=[str(origin) for origin in settings.CORS_ORIGINS],
             allow_origin_regex=settings.CORS_ORIGIN_REGEX,
             allow_credentials=settings.CORS_CREDENTIALS,
             allow_methods=settings.CORS_METHODS,
@@ -55,15 +81,15 @@ def create_application() -> FastAPI:
     # add defined routers
     application.include_router(api_router, prefix=settings.API_STR)
 
-    # event handler
-    application.add_event_handler("startup", startup_handler)
-    application.add_event_handler("shutdown", shutdown_handler)
-
     # load logging config
     logging.config.dictConfig(settings.LOGGING_CONFIG)
 
     # add defined middleware functions
     application.add_middleware(BaseHTTPMiddleware, dispatch=log_time)
+    application.add_middleware(
+        SessionMiddleware,
+        secret_key="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
+    )
 
     # create tables in db
     create_db_tables()

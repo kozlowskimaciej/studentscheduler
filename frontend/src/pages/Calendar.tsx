@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 
@@ -20,32 +20,41 @@ export default function Calendar() {
     events: any; name: string, color: string 
 }[]>([]);
 
-  const subjects: Subject[] = [
-    {
-      name: "Math",
-      color: "#FF5733",
-      events: [
-        { name: "Assignment", date: new Date(2024, 3, 10) },
-        { name: "Test", date: new Date(2024, 3, 15) }
-      ]
-    },
-    {
-      name: "Science",
-      color: "#33FF57",
-      events: [
-        { name: "Experiment", date: new Date(2024, 3, 15) },
-        { name: "Project", date: new Date(2024, 3, 22) }
-      ]
-    },
-    {
-      name: "History",
-      color: "#5733FF",
-      events: [
-        { name: "Presentation", date: new Date(2024, 3, 22) },
-        { name: "Essay Due", date: new Date(2024, 3, 29) }
-      ]
+const [subjects, setSubjects] = useState<Subject[]>([]);
+const [error, setError] = useState<string | null>(null);
+
+useEffect(() => {
+  const fetchSubjects = async () => {
+    try {
+      const response = await fetch('/subjects', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer YOUR_ACCESS_TOKEN` // Replace with the user's access token
+        }
+      });
+
+      if (response.status === 401) {
+        throw new Error("No current user");
+      }
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setSubjects(data);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
-  ];
+  };
+
+  fetchSubjects();
+}, []); // Empty dependency array to run only once on mount
 
   const isEqual = (date1: Date, date2: Date) => {
     return (

@@ -5,6 +5,7 @@ ARG REACT_PORT
 WORKDIR /frontend
 COPY frontend/package*.json /frontend
 RUN npm install
+run npm install styled-components
 COPY frontend/. /frontend
 RUN npm run build
 ENV PORT=${REACT_PORT}

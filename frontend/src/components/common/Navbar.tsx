@@ -16,6 +16,10 @@ export default function Navbar() {
       href: "/courses",
       title: "Courses",
     },
+    {
+      href: "/chat",
+      title: "Chat",
+    },
   ];
   return (
     <>
