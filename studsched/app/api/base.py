@@ -3,25 +3,24 @@
 import asyncio
 from typing import Any, Optional, Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, FastAPI
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Request, status
 from fastapi.encoders import jsonable_encoder
 from sqlmodel import Session
-from starlette import status
-from fastapi import APIRouter, Request, HTTPException, status, Depends
 from sqlalchemy.orm.exc import NoResultFound
 from starlette.websockets import WebSocket, WebSocketDisconnect
+from jose import jwt
 
 from ..chat.chat import create_chat_service, RedisChatService
 from ..chat.models.models import Channel, Message, MessageBase, MessageBody, UserBase
 from ..configs import get_settings
-from ..db.models.models import RequirementCreate, Subject, VersionResponse
 from ..db.queries import queries
 from ..db.session import engine
 from ..version import __version__
 from ..db.models import models
-from ..db.queries import queries
 
 base_router = APIRouter()
+
+settings = get_settings()
 
 
 def get_db():
@@ -44,7 +43,20 @@ DatabaseDep = Annotated[Session, Depends(get_db)]
 
 
 def get_current_user(request: Request, db: DatabaseDep):
-    user_id = request.session.get("user_id")
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        token = request.cookies.get("token")
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ENCODE_ALGORITHM])
+        user_id: int = payload.get("id")
+        if user_id is None:
+            raise credentials_exception
+    except Exception:
+        raise credentials_exception
     return db.get(models.User, user_id)
 
 
@@ -111,8 +123,7 @@ async def list_channels(chat: ChatService):
 
 
 async def channel_from_slug(
-    chat: ChatService,
-    channel_slug: str = Path(...)
+    chat: ChatService, channel_slug: str = Path(...)
 ) -> Channel:
     channel = await chat.get_channel(channel_slug)
     if not channel:
