@@ -20,8 +20,7 @@ from ..db.models import models
 
 base_router = APIRouter()
 
-SECRET_KEY = "43248832482384"
-ALGORITHM = "HS256"
+settings = get_settings()
 
 
 def get_db():
@@ -52,7 +51,7 @@ def get_current_user(request: Request, db: DatabaseDep):
 
     try:
         token = request.cookies.get("token")
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ENCODE_ALGORITHM])
         user_id: int = payload.get("id")
         if user_id is None:
             raise credentials_exception

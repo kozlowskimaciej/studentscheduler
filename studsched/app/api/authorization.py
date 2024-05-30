@@ -5,12 +5,12 @@ from datetime import datetime, timedelta
 from typing import Annotated
 from jose import jwt
 
+from ..configs import get_settings
 from ..db.models import models
 from ..db.queries import queries
 from .base import DatabaseDep
 
-SECRET_KEY = "43248832482384"
-ALGORITHM = "HS256"
+settings = get_settings()
 
 
 authorization_router = APIRouter()
@@ -67,7 +67,7 @@ def create_jwt_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ENCODE_ALGORITHM)
     return encoded_jwt
 
 
