@@ -14,6 +14,7 @@ logger = logging.getLogger(settings.PROJECT_SLUG)
 class RedisChatService:
     def __init__(self, url: str):
         self.redis = aioredis.from_url(url, decode_responses=True, encoding="utf-8")
+        self.last_msg: dict[str, str] = dict()
 
     def close(self):
         asyncio.create_task(self.redis.close())
@@ -64,15 +65,17 @@ class RedisChatService:
         only_new: bool = False,
     ):
         redis_channel = f":channel-{channel_slug}:messages"
-        last_msg = "0-0"
         block_time = None
+        self.last_msg.setdefault(redis_channel, "0-0")
         if read_timeout is not None:
             block_time = read_timeout * 1000
         while True:
             if messages := await self.redis.xread(
-                {redis_channel: last_msg}, count=1, block=block_time
+                {redis_channel: self.last_msg[redis_channel]}, count=1, block=block_time
             ):
-                last_msg, message_serialized = dict(messages)[redis_channel][0]
+                self.last_msg[redis_channel], message_serialized = dict(messages)[
+                    redis_channel
+                ][0]
                 message = Message.parse_raw(message_serialized["data"])
                 yield message
             else:
