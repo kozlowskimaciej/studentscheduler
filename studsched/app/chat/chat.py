@@ -5,7 +5,7 @@ from typing import Iterable, Optional
 from redis import asyncio as aioredis
 
 from ..configs import get_settings
-from .models.models import *
+from .models.models import Channel, Message, MessageBase, UserBase
 
 settings = get_settings()
 logger = logging.getLogger(settings.PROJECT_SLUG)
@@ -33,13 +33,16 @@ class RedisChatService:
         await self.redis.hset(":channels", mapping={slug: name})
         return Channel(name=name, slug=slug)
 
-    async def get_messages(self, channel_slug: str) -> Iterable[Message]:
+    async def get_messages(self, channel_slug: str) -> list[Message]:
         redis_stream: str = f":channel-{channel_slug}:messages"
-        response = dict(await self.redis.xread({redis_stream: "0-0"}, count=1))
-        stream_messages = response.get(redis_stream, [])
-        return [
-            Message.parse_raw(payload["data"]) for _msg_id, payload in stream_messages
-        ]
+        messages: list[Message] = []
+        last_msg = "0-0"
+        while resp := dict(
+            await self.redis.xread({redis_stream: last_msg}, count=5, block=None)
+        ):
+            for last_msg, message_serialized in dict(resp)[redis_stream]:
+                messages += [Message.parse_raw(message_serialized["data"])]
+        return messages
 
     async def send_message(
         self, channel_slug: str, user: UserBase, message_base: MessageBase
@@ -55,7 +58,10 @@ class RedisChatService:
         return message
 
     async def incoming_messages(
-        self, channel_slug: str, read_timeout: float = None, only_new: bool = False
+        self,
+        channel_slug: str,
+        read_timeout: float | None = None,
+        only_new: bool = False,
     ):
         redis_channel = f":channel-{channel_slug}:messages"
         last_msg = "0-0"
