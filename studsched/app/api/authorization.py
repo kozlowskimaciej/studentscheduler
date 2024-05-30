@@ -1,12 +1,17 @@
 from authlib.integrations.starlette_client.apps import StarletteOAuth1App
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import RedirectResponse
-from datetime import datetime
+from fastapi.responses import JSONResponse
+from datetime import datetime, timedelta
 from typing import Annotated
+from jose import jwt
 
 from ..db.models import models
 from ..db.queries import queries
 from .base import DatabaseDep
+
+SECRET_KEY = "43248832482384"
+ALGORITHM = "HS256"
+
 
 authorization_router = APIRouter()
 
@@ -30,9 +35,7 @@ async def login(request: Request, usos: UsosDep):
 async def get_user_data(token, usos: StarletteOAuth1App) -> dict:
     usos_user = await usos.get(
         "services/users/user",
-        params={
-            "fields": "student_number|first_name|middle_names|last_name|email"
-        },
+        params={"fields": "student_number|first_name|middle_names|last_name|email"},
         token=token,
     )
     return usos_user.json()
@@ -60,17 +63,29 @@ def parse_usos_data(usos_user: dict, usos_courses: dict) -> models.UserInfo:
     return models.UserInfo(user=usos_user, courses=usos_courses)
 
 
+def create_jwt_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.now() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
 @authorization_router.get("/auth")
 async def auth(request: Request, db: DatabaseDep, usos: UsosDep):
     token = await usos.authorize_access_token(request)
-    request.session["token"] = token
 
     usos_user = await get_user_data(token, usos)
     usos_courses = await get_courses_data(token, usos)
 
     user_info = parse_usos_data(usos_user, usos_courses)
     db_user = queries.add_user_info(db, user_info)
-    request.session["user_id"] = db_user.id
 
-    url = request.url_for("subjects")
-    return RedirectResponse(url=url)
+    token_data = {"id": db_user.id}
+    jwt_token = create_jwt_token(token_data)
+
+    response = JSONResponse(content={"token": jwt_token})
+    response.set_cookie(
+        key="token", value=jwt_token, httponly=True, secure=False, samesite="lax"
+    )
+    return response

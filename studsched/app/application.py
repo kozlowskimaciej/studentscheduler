@@ -3,7 +3,6 @@
 # mypy: ignore-errors
 import logging.config
 import pathlib
-from functools import partial
 
 from fastapi import FastAPI
 from sqlmodel import SQLModel, text
@@ -18,8 +17,6 @@ from .configs import get_settings
 from .db import engine
 from .middlewares import log_time
 from .version import __version__
-import pathlib
-from functools import partial
 from contextlib import asynccontextmanager
 from authlib.integrations.starlette_client import OAuth
 
