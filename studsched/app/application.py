@@ -14,10 +14,8 @@ from starlette.middleware.cors import CORSMiddleware
 from .api import api_router
 from .events.base import logger
 from .chat.chat import create_chat_service
-from .events import startup_handler, shutdown_handler
 from .configs import get_settings
 from .db import engine
-from .events import shutdown_handler, startup_handler
 from .middlewares import log_time
 from .version import __version__
 import pathlib
@@ -25,6 +23,7 @@ from functools import partial
 from contextlib import asynccontextmanager
 from authlib.integrations.starlette_client import OAuth
 
+settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,9 +38,11 @@ async def lifespan(app: FastAPI):
         access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
     )
     app.oauth = oauth
+    app.state.chat_service = create_chat_service(settings.REDIS_URL)
     logger.info("Starting up ...")
     yield
     logger.info("Shutting down ...")
+    app.state.chat_service.close()
 
 
 def create_db_tables():
@@ -64,8 +65,6 @@ def create_application() -> FastAPI:
     Returns:
         object of FastAPI: the fastapi application instance.
     """
-    settings = get_settings()
-    chat_service = create_chat_service(settings.REDIS_URL)
 
     application = FastAPI(
         title=settings.PROJECT_NAME,
@@ -89,9 +88,6 @@ def create_application() -> FastAPI:
     # add defined routers
     application.include_router(api_router, prefix=settings.API_STR)
 
-    @application.on_event("shutdown")
-    async def on_shutdown():
-        application.state.chat_service.close()
 
     # load logging config
     logging.config.dictConfig(settings.LOGGING_CONFIG)

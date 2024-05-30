@@ -3,7 +3,7 @@
 import asyncio
 from typing import Any, Optional, Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, FastAPI
 from fastapi.encoders import jsonable_encoder
 from sqlmodel import Session
 from starlette import status
@@ -11,7 +11,7 @@ from fastapi import APIRouter, Request, HTTPException, status, Depends
 from sqlalchemy.orm.exc import NoResultFound
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from ..chat.chat import create_chat_service
+from ..chat.chat import create_chat_service, RedisChatService
 from ..chat.models.models import Channel, Message, MessageBase, MessageBody, UserBase
 from ..configs import get_settings
 from ..db.models.models import RequirementCreate, Subject, VersionResponse
@@ -79,7 +79,7 @@ async def replace_requirements(
 async def replace_tasks(
     subject_id: int,
     tasks: list[models.TaskCreate],
-    db: Session = Depends(get_db),
+    db: DatabaseDep,
 ):
     try:
         queries.replace_tasks(db, subject_id, tasks)
@@ -90,23 +90,11 @@ async def replace_tasks(
         )
 
 
-redischat = None
+def chat_service(request: Request):
+    return request.app.state.chat_service
 
 
-@base_router.on_event("startup")
-async def on_startup():
-    global redischat
-    redischat = create_chat_service(get_settings().REDIS_URL)
-
-
-@base_router.on_event("shutdown")
-async def on_shutdown():
-    redischat.close()
-
-
-def chat_service():
-    assert redischat
-    return redischat
+ChatService = Annotated[RedisChatService, Depends(chat_service)]
 
 
 async def authenticated_user():
@@ -118,12 +106,13 @@ async def authenticated_user():
     response_model=list[Channel],
     dependencies=[Depends(authenticated_user)],
 )
-async def list_channels(chat=Depends(chat_service)):
+async def list_channels(chat: ChatService):
     return await chat.get_channels()
 
 
 async def channel_from_slug(
-    channel_slug: str = Path(...), chat=Depends(chat_service)
+    chat: ChatService,
+    channel_slug: str = Path(...)
 ) -> Channel:
     channel = await chat.get_channel(channel_slug)
     if not channel:
@@ -135,17 +124,17 @@ async def channel_from_slug(
 
 @base_router.get("/channels/{channel_slug}/messages", response_model=list[Message])
 async def list_channel_messages(
+    chat: ChatService,
     channel: Channel = Depends(channel_from_slug),
-    chat=Depends(chat_service),
 ) -> list[Message]:
     return list(await chat.get_messages(channel.slug))
 
 
 @base_router.post("/channels/{channel_slug}/messages", response_model=Message)
 async def create_channel_message(
+    chat: ChatService,
     user: UserBase = Depends(authenticated_user),
     channel: Channel = Depends(channel_from_slug),
-    chat=Depends(chat_service),
     message: MessageBase = Body(...),
 ) -> MessageBase:
     return await chat.send_message(channel.slug, user, message)
@@ -154,14 +143,14 @@ async def create_channel_message(
 @base_router.post(
     "/channels", response_model=Channel, dependencies=[Depends(authenticated_user)]
 )
-async def create_channel(chat=Depends(chat_service), channel: Channel = Body(...)):
+async def create_channel(chat: ChatService, channel: Channel = Body(...)):
     return await chat.create_channel(slug=channel.slug, name=channel.name)
 
 
 @base_router.websocket("/channels/{channel_slug}/messages_ws")
 async def channel_messages_ws(
     websocket: WebSocket,
-    chat=Depends(chat_service),
+    chat: ChatService,
     channel: Channel = Depends(channel_from_slug),
     user: Optional[UserBase] = Depends(authenticated_user),
 ):
