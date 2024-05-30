@@ -2,18 +2,26 @@
 
 # mypy: ignore-errors
 import logging.config
+import pathlib
+from functools import partial
+
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
+from sqlmodel import SQLModel, text
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from sqlmodel import SQLModel, text
+from starlette.middleware.cors import CORSMiddleware
+
 from .api import api_router
 from .events.base import logger
+from .chat.chat import create_chat_service
+from .events import startup_handler, shutdown_handler
 from .configs import get_settings
 from .db import engine
+from .events import shutdown_handler, startup_handler
 from .middlewares import log_time
 from .version import __version__
 import pathlib
+from functools import partial
 from contextlib import asynccontextmanager
 from authlib.integrations.starlette_client import OAuth
 
@@ -44,9 +52,7 @@ def create_db_tables():
 def load_example_data(path: str):
     """Load example data to database."""
     with engine.connect() as con:
-        with open(
-            (pathlib.Path(__file__).parent) / path, encoding="utf-8"
-        ) as file:
+        with open((pathlib.Path(__file__).parent) / path, encoding="utf-8") as file:
             query = text(file.read())
             con.execute(query)
             con.commit()
@@ -59,6 +65,8 @@ def create_application() -> FastAPI:
         object of FastAPI: the fastapi application instance.
     """
     settings = get_settings()
+    chat_service = create_chat_service(settings.REDIS_URL)
+
     application = FastAPI(
         title=settings.PROJECT_NAME,
         debug=settings.DEBUG,
@@ -80,6 +88,10 @@ def create_application() -> FastAPI:
 
     # add defined routers
     application.include_router(api_router, prefix=settings.API_STR)
+
+    @application.on_event("shutdown")
+    async def on_shutdown():
+        application.state.chat_service.close()
 
     # load logging config
     logging.config.dictConfig(settings.LOGGING_CONFIG)

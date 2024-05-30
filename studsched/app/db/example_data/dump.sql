@@ -10,7 +10,7 @@
 
 -- Insert into linked_course
 -- INSERT INTO linked_course (id) VALUES (1);
-SELECT * FROM linked_course;
+-- SELECT * FROM linked_course;
 -- Insert into requirements
 -- INSERT INTO requirements (id, task_type, requirement_type, threshold, threshold_type, linked_course_id) 
 -- VALUES (1, 'LAB', 'TOTAL', 10, 'PERCENT', 1);
