@@ -22,6 +22,7 @@ from authlib.integrations.starlette_client import OAuth
 
 settings = get_settings()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     oauth = OAuth()
@@ -30,7 +31,7 @@ async def lifespan(app: FastAPI):
         client_id="TQbmzC4s3FSSBLd5gWkq",
         client_secret="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
         api_base_url="https://apps.usos.pw.edu.pl/",
-        request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email",
+        request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email|studies",
         authorize_url="https://apps.usos.pw.edu.pl/services/oauth/authorize",
         access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
     )
@@ -84,7 +85,6 @@ def create_application() -> FastAPI:
 
     # add defined routers
     application.include_router(api_router, prefix=settings.API_STR)
-
 
     # load logging config
     logging.config.dictConfig(settings.LOGGING_CONFIG)
