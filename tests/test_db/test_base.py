@@ -1,11 +1,11 @@
-from sqlalchemy import Column, Integer, String
-from studsched.app.db import Base
+from sqlmodel import SQLModel, Field
+from typing import Optional
 
 
-class DummyTable(Base):
-    id = Column(Integer, primary_key=True)
-    username = Column(String, unique=True, nullable=False)
-    fullname = Column(String, nullable=True)
+class DummyTable(SQLModel):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str = Field(unique=True, nullable=False)
+    fullname: str = Field(nullable=True)
 
 
 def test_tablename():
@@ -14,5 +14,6 @@ def test_tablename():
 
 def test_asdict():
     d = DummyTable(id=1, username="dummy username", fullname="dummy fullname")
-    assert d._asdict() == dict(id=1, username="dummy username",
-                               fullname="dummy fullname")
+    assert dict(d) == dict(
+        id=1, username="dummy username", fullname="dummy fullname"
+    )

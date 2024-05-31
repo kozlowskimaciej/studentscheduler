@@ -1,16 +1,26 @@
 """Endpoints for getting version information."""
 
-from typing import Any, Annotated
-from sqlmodel import Session
-from fastapi import APIRouter, Request, HTTPException, status, Depends
-from sqlalchemy.orm.exc import NoResultFound
+import asyncio
+from typing import Any, Optional, Annotated
 
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Request, status
+from fastapi.encoders import jsonable_encoder
+from sqlmodel import Session
+from sqlalchemy.orm.exc import NoResultFound
+from starlette.websockets import WebSocket, WebSocketDisconnect
+from jose import jwt
+
+from ..chat.chat import create_chat_service, RedisChatService
+from ..chat.models.models import Channel, Message, MessageBase, MessageBody, UserBase
+from ..configs import get_settings
+from ..db.queries import queries
 from ..db.session import engine
 from ..version import __version__
 from ..db.models import models
-from ..db.queries import queries
 
 base_router = APIRouter()
+
+settings = get_settings()
 
 
 def get_db():
@@ -33,7 +43,20 @@ DatabaseDep = Annotated[Session, Depends(get_db)]
 
 
 def get_current_user(request: Request, db: DatabaseDep):
-    user_id = request.session.get("user_id")
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        token = request.cookies.get("token")
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ENCODE_ALGORITHM])
+        user_id: int = payload.get("id")
+        if user_id is None:
+            raise credentials_exception
+    except Exception:
+        raise credentials_exception
     return db.get(models.User, user_id)
 
 
@@ -68,7 +91,7 @@ async def replace_requirements(
 async def replace_tasks(
     subject_id: int,
     tasks: list[models.TaskCreate],
-    db: Session = Depends(get_db),
+    db: DatabaseDep,
 ):
     try:
         queries.replace_tasks(db, subject_id, tasks)
@@ -79,27 +102,83 @@ async def replace_tasks(
         )
 
 
-@base_router.put("/subjects/{subject_id}/tasks")
-async def replace_tasks(
-    subject_id: int,
-    tasks: list[models.TaskCreate],
-    db: Session = Depends(get_db),
-):
-    try:
-        queries.replace_tasks(db, subject_id, tasks)
-    except NoResultFound:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Subject with id {subject_id} not found",
-        )
+def chat_service(request: Request):
+    return request.app.state.chat_service
 
-@base_router.get("/subjects/{subject_id}/tasks", response_model=list[models.Task])
-async def get_tasks(subject_id: int, db: Session = Depends(get_db)):
-    try:
-        tasks = queries.get_tasks(db, subject_id)
-        return tasks
-    except NoResultFound:
+
+ChatService = Annotated[RedisChatService, Depends(chat_service)]
+
+
+async def authenticated_user():
+    return UserBase(username="JakubStachowiak420")
+
+
+@base_router.get(
+    "/channels",
+    response_model=list[Channel],
+    dependencies=[Depends(authenticated_user)],
+)
+async def list_channels(chat: ChatService):
+    return await chat.get_channels()
+
+
+async def channel_from_slug(
+    chat: ChatService, channel_slug: str = Path(...)
+) -> Channel:
+    channel = await chat.get_channel(channel_slug)
+    if not channel:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Subject with id {subject_id} not found",
+            status_code=status.HTTP_404_NOT_FOUND, detail="channel not found"
         )
+    return channel
+
+
+@base_router.get("/channels/{channel_slug}/messages", response_model=list[Message])
+async def list_channel_messages(
+    chat: ChatService,
+    channel: Channel = Depends(channel_from_slug),
+) -> list[Message]:
+    return list(await chat.get_messages(channel.slug))
+
+
+@base_router.post("/channels/{channel_slug}/messages", response_model=Message)
+async def create_channel_message(
+    chat: ChatService,
+    user: UserBase = Depends(authenticated_user),
+    channel: Channel = Depends(channel_from_slug),
+    message: MessageBase = Body(...),
+) -> MessageBase:
+    return await chat.send_message(channel.slug, user, message)
+
+
+@base_router.post(
+    "/channels", response_model=Channel, dependencies=[Depends(authenticated_user)]
+)
+async def create_channel(chat: ChatService, channel: Channel = Body(...)):
+    return await chat.create_channel(slug=channel.slug, name=channel.name)
+
+
+@base_router.websocket("/channels/{channel_slug}/messages_ws")
+async def channel_messages_ws(
+    websocket: WebSocket,
+    chat: ChatService,
+    channel: Channel = Depends(channel_from_slug),
+    user: Optional[UserBase] = Depends(authenticated_user),
+):
+    if not user:
+        return
+    async for message in chat.incoming_messages(
+        channel_slug=channel.slug, read_timeout=1
+    ):
+        if message is ...:
+            # No messages for some time, check if websocket is still active.
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=0.1)
+            except asyncio.TimeoutError:
+                continue
+            except WebSocketDisconnect:
+                # Client disconnected
+                break
+            else:
+                continue
+        await websocket.send_json(jsonable_encoder(message.dict()))

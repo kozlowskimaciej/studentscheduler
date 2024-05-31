@@ -113,10 +113,3 @@ def add_user_info(db: Session, user_info: models.UserInfo):
 
     db.commit()
     return db_user
-
-
-def get_tasks(db: Session, subject_id: int) -> list[models.Task]:
-    subject = db.query(models.Subject).filter(models.Subject.id == subject_id).one_or_none()
-    if subject is None:
-        raise NoResultFound
-    return subject.tasks

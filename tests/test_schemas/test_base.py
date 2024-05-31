@@ -1,4 +1,4 @@
-from studsched.app.schemas.base import VersionResponse
+from studsched.app.db.models.models import VersionResponse
 
 
 def test_versionresponse():

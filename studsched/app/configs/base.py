@@ -1,4 +1,5 @@
 """Base settings class contains only important fields."""
+from enum import Enum
 
 # mypy: ignore-errors
 import ast
@@ -155,5 +156,15 @@ class Settings(BaseSettings):
         },
     }
 
-    class Config:
-        case_sensitive = True
+    # ########################## Chat Configuration ############################
+    REDIS_URL: str = os.getenv("REDIS_URL") or "redis://localhost:6379"
+    # CHAT_BACKEND: str = os.getenv("CHAT_BACKEND") or "memory"
+
+    if REDIS_URL and "decode_responses" not in REDIS_URL:
+        url, *args = REDIS_URL.split("?", maxsplit=1)
+        if args:
+            args_str = "&"
+        else:
+            args_str = ""
+        args_str += "decode_responses=true"
+        REDIS_URL = url + "?" + args_str

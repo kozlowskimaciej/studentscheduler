@@ -6,6 +6,7 @@ WORKDIR /frontend
 COPY frontend/package*.json /frontend
 RUN npm install
 run npm install styled-components
+run npm install axios
 COPY frontend/. /frontend
 RUN npm run build
 ENV PORT=${REACT_PORT}
