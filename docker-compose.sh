@@ -47,14 +47,14 @@ elif [ "$command" = "run" ]; then
         echo "STARTING TEST ENVIRONMENT"
         $docker_command run --rm --service-ports backend
         $docker_command down -v
-    elif [ "$env" = "debug"]; then
+    elif [ "$env" = "debug" ]; then
         echo "Running the database for debugging"
-        $docker_command run --rm --service-ports db
+        $docker_command run --rm --service-ports db redis
     else
         echo "STARTING DEV ENVIRONMENT"
         $docker_command up 
     fi
-elif [ "$command" = "build"  ]; then
+elif [ "$command" = "build" ]; then
     if [ "$env" = "test" ]; then
         echo "Building the test docker image"
         $docker_command build backend
@@ -72,7 +72,7 @@ elif [ "$command" = "flush"  ]; then
     fi
 elif [ "$command" = "debug" ]; then
     echo "Running the database for backend debugging"
-    $docker_command run --service-ports db
+    $docker_command up db redis
 else
     echo "Invalid command. Please provide a valid command (run, build, down, clean)."
     echo "Usage: ./docker-compose.sh [command] [env]"

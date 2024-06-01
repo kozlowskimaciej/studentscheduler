@@ -36,7 +36,8 @@ class Settings(BaseSettings):
     # TODO: Please note that, the secret key will be different for each running
     # instance or each time restart the service, if you prefer a stable one,
     # please use an environment variable.
-    SECRET_KEY: str = secrets.token_urlsafe(32)
+    # SECRET_KEY: str = secrets.token_urlsafe(32)
+    SECRET_KEY: str = "papollo2137"
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     # 60 minutes * 24 hours * 30 * 6  months = 6 months
@@ -92,9 +93,7 @@ class Settings(BaseSettings):
     # ########################### DB Configuration #############################
     POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER") or "localhost:5432"
     POSTGRES_USER: str = os.getenv("POSTGRES_USER") or "postgres"
-    POSTGRES_PASSWORD: str = (
-        os.getenv("POSTGRES_PASSWORD") or "mysecretpassword"
-    )
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD") or "mysecretpassword"
     POSTGRES_DB: str = os.getenv("POSTGRES_DB") or "postgres"
 
     # set the default value to None, such that the assemble_db_connection can
