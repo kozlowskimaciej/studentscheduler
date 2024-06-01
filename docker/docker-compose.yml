@@ -49,16 +49,16 @@ services:
     depends_on:
       - db
 
-  # frontend:
-  #   build:
-  #     context: ../
-  #     dockerfile: ./docker/Dockerfile.frontend
-  #     args:
-  #       REACT_PORT: "${REACT_PORT}"
-  #   ports:
-  #     - "${REACT_PORT}:${REACT_PORT}"
-  #   depends_on:
-  #     - backend
+  frontend:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile.frontend
+      args:
+        REACT_PORT: "${REACT_PORT}"
+    ports:
+      - "${REACT_PORT}:${REACT_PORT}"
+    depends_on:
+      - backend
 
   redis:
     image: redis
