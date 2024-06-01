@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
 import { Course } from "../models/Course";
-import { Requirement } from "../models/Requirement";
-import { RequirementBD } from "../models/RequirementBD";
 import { Task, TaskType } from "../models/Task";
 import { TaskBD } from "../models/TaskBD";
+import axios from 'axios';
 
 const fetchSubjects = async (): Promise<Course[]> => {
   try {
@@ -48,28 +47,19 @@ const convertTasksBDToTasks = (TaskBD: TaskBD[]): Task[] => {
   return TaskBD.map(convertTaskBDToTask);
 };
 
-interface Event {
-  name: string;
-  date: Date;
-}
-
-interface Subject {
-  name: string;
-  color: string;
-  events: Event[];
-}
-
 export default function Calendar() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [subjects, setSubjects] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedSubjects, setSelectedSubjects] = useState<Course[]>([]);
 
   useEffect(() => {
     const getSubjects = async () => {
       try {
         const subject_temp = await fetchSubjects();
-        setCourses(subject_temp);
+        setSubjects(subject_temp);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -83,11 +73,6 @@ export default function Calendar() {
 
     getSubjects();
 
-    const subjects = [];
-    for (const req of requirements) {
-      const convertedReq = convertRequirementToRequirementBD(req);
-      requirementsBD.push(convertedReq);
-    }
   }, []);
 
   if (loading) {
@@ -97,12 +82,6 @@ export default function Calendar() {
   if (error) {
     return <div>Error: {error}</div>;
   }
-
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedSubjects, setSelectedSubjects] = useState<{
-    events: any; name: string, color: string 
-  }[]>([]);
 
   const isEqual = (date1: Date, date2: Date) => {
     return (
@@ -131,7 +110,7 @@ export default function Calendar() {
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
     const subjectsOnSelectedDate = subjects.filter((subj) =>
-      subj.events.some((event) => isEqual(event.date, date))
+      subj.tasks.some((event) => isEqual(event.deadline, date))
     );
     setSelectedSubjects(subjectsOnSelectedDate);
   };
@@ -177,7 +156,7 @@ export default function Calendar() {
     for (let i = 1; i <= daysInMonth; i++) {
       const currentDate = new Date(date.getFullYear(), date.getMonth(), i);
       const subjectsOnDate = subjects.filter((subj) =>
-        subj.events.some((event) => isEqual(event.date, currentDate))
+        subj.tasks.some((event: { deadline: Date; }) => isEqual(event.deadline, currentDate))
       );
 
       const subjectElements =
@@ -265,10 +244,10 @@ export default function Calendar() {
               <div style={{ marginTop: "10px", border: "1px solid #ccc", padding: "20px", borderRadius: "10px" }}>
                 <h4>Events on Selected Date:</h4>
                 {selectedSubjects.flatMap((subject) =>
-                  subject.events.filter((event: { date: Date; }) => isEqual(event.date, selectedDate)).map((event: { name: string; }, eventIndex: React.Key | null | undefined) => (
+                  subject.tasks.filter((event: { deadline: Date; }) => isEqual(event.deadline, selectedDate)).map((event: { task_type: string; }, eventIndex: React.Key | null | undefined) => (
                     <div key={eventIndex} style={{ marginBottom: "10px" }}>
-                      <div style={{ width: "20px", height: "20px", backgroundColor: subject.color, marginRight: "10px", display: "inline-block" }}></div>
-                      <span>{subject.name} - {event.name}</span>
+                      <div style={{ width: "20px", height: "20px", backgroundColor: subject.appearance.background_color, marginRight: "10px", display: "inline-block" }}></div>
+                      <span>{subject.name} - {event.task_type}</span>
                     </div>
                   ))
                 )}
