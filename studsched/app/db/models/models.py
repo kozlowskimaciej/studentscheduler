@@ -112,6 +112,7 @@ class TaskBase(SQLModel):
     max_points: int
     points: int
     deadline: datetime
+    description: Optional[str]
 
 
 class Task(TaskBase, table=True):

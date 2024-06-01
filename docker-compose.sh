@@ -10,9 +10,20 @@ if [ "$command" = "clean" ]; then
     exit 0
 fi
 
+if [ -z "$env" ]; then
+    echo "No environment provided. Please provide a valid environment (dev, prod, test)."
+    echo "Usage: ./docker-compose.sh [command] [env]"
+    exit 1
+fi
+
+if [ "$env" != "dev" ] && [ "$env" != "test" ] && [ "$env" != "prod" ]; then
+    echo "Invalid environment provided. Must be 'dev', 'test', or 'prod'."
+    exit 1
+
 if [ "$command" = "debug" ]; then
     echo "In debug mode."
     env="dev"
+
 fi
 
 if [ -z "$env" ]; then
