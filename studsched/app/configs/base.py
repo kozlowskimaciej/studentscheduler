@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     For example, your domain is example, then the regex should be something like
         ```r"https:\/\/.*\.example\.?"```
     """
-    CORS_ORIGIN_REGEX: str = None
+    CORS_ORIGIN_REGEX: str = "*"
     """A list of HTTP methods that should be allowed for cross-origin requests.
     Defaults to ['*']. You can use ['GET'] to allow standard GET method."""
     CORS_METHODS: List[str] = ["GET"]

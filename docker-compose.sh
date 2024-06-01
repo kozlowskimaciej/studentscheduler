@@ -62,6 +62,9 @@ elif [ "$command" = "flush"  ]; then
     else
         echo "Flush command is only applicable for dev environment."
     fi
+elif [ "$command" = "debug" ]; then
+    echo "Running the database for backend debugging"
+    $docker_command run --service-ports db
 else
     echo "Invalid command. Please provide a valid command (run, build, down, clean)."
     echo "Usage: ./docker-compose.sh [command] [env]"

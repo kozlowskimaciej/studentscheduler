@@ -3,27 +3,23 @@ import { useCourseDialogContext } from "../../../contexts/CourseDialogContext";
 import React from "react";
 
 export default function CourseDialogFooter() {
-  const { course, variant } = useCourseDialogContext();
-  const { updateCourse, addCourse } = useCoursesContext();
+  const { course, variant, updateCourseReqTas, closeDialog } = useCourseDialogContext();
+  const { updateCourse } = useCoursesContext();
 
   const handleUpdate = () => {
     console.log("sending this to backend for updating: ", course);
     updateCourse(course.id, course);
   };
 
-  const handleAdd = () => {
-    console.log("sending this to backend for adding: ", course);
-    addCourse(course);
-  };
-
   const handleSubmit = () => {
     // validate using zod
-    const action = variant === "new" ? handleAdd : handleUpdate;
+    const action = handleUpdate;
     action();
+    updateCourseReqTas(course);
+    closeDialog();
   };
 
-  const acceptButtonText =
-    variant === "new" ? "Dodaj przedmiot" : "Edytuj przedmiot";
+  const acceptButtonText = "Edytuj przedmiot";
 
   return (
     <div className="ml-auto flex items-center gap-4">

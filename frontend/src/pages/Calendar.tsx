@@ -1,6 +1,52 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/common/Navbar";
 import Footer from "../components/common/Footer";
+import { Course } from "../models/Course";
+import { Requirement } from "../models/Requirement";
+import { RequirementBD } from "../models/RequirementBD";
+import { Task, TaskType } from "../models/Task";
+import { TaskBD } from "../models/TaskBD";
+
+const fetchSubjects = async (): Promise<Course[]> => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/v1/subjects', {
+      withCredentials: true
+    });
+    return response.data.map((subject: any) => ({
+      name: subject.name,
+      appearance: {
+        background_color: "#FF0000",
+      },
+      tasks: convertTasksBDToTasks(subject.tasks) || []
+    }));
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response && error.response.status === 401) {
+        throw new Error('Unauthorized: No current user');
+      }
+    }
+    throw new Error('Failed to fetch subjects');
+  }
+};
+
+const reverseTaskTypeMapping: { [key: number]: TaskType } = {
+  1: "Laboratorium",
+  2: "Projekt",
+};
+
+const convertTaskBDToTask = (taskBD: any) => {
+  return {
+    max_points: parseInt(taskBD.max_points),
+    result: taskBD.points === 0 ? null : taskBD.points,
+    deadline: new Date(taskBD.deadline),
+    task_type: reverseTaskTypeMapping[taskBD.task_type],
+    description: taskBD.description,
+  };
+};
+
+const convertTasksBDToTasks = (TaskBD: TaskBD[]): Task[] => {
+  return TaskBD.map(convertTaskBDToTask);
+};
 
 interface Event {
   name: string;
@@ -14,47 +60,49 @@ interface Subject {
 }
 
 export default function Calendar() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getSubjects = async () => {
+      try {
+        const subject_temp = await fetchSubjects();
+        setCourses(subject_temp);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('An unexpected error occurred');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getSubjects();
+
+    const subjects = [];
+    for (const req of requirements) {
+      const convertedReq = convertRequirementToRequirementBD(req);
+      requirementsBD.push(convertedReq);
+    }
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSubjects, setSelectedSubjects] = useState<{
     events: any; name: string, color: string 
-}[]>([]);
-
-const [subjects, setSubjects] = useState<Subject[]>([]);
-const [error, setError] = useState<string | null>(null);
-
-useEffect(() => {
-  const fetchSubjects = async () => {
-    try {
-      const response = await fetch('/subjects', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer YOUR_ACCESS_TOKEN` // Replace with the user's access token
-        }
-      });
-
-      if (response.status === 401) {
-        throw new Error("No current user");
-      }
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setSubjects(data);
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("An unknown error occurred");
-      }
-    }
-  };
-
-  fetchSubjects();
-}, []); // Empty dependency array to run only once on mount
+  }[]>([]);
 
   const isEqual = (date1: Date, date2: Date) => {
     return (

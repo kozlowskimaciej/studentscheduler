@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import Navbar from "../components/common/Navbar";
 
@@ -15,15 +15,23 @@ const fadeIn = keyframes`
 `;
 
 // Styled components
-const ChatContainer = styled.div`
-  width: 300px;
-  margin: auto;
+const Card = styled.div`
+  width: 90%;
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
   border: 1px solid #ccc;
   border-radius: 10px;
   background-color: white;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: ${fadeIn} 0.3s ease-in-out;
+`;
+
+const ChatContainer = styled.div`
   display: flex;
   flex-direction: column;
+  max-height: 500px;
   overflow: hidden;
 `;
 
@@ -38,10 +46,11 @@ const ChatBubbleStyled = styled.div<{ isUser: boolean }>`
   padding: 10px;
   border-radius: 10px;
   max-width: 80%;
-  animation: ${fadeIn} 0.3s ease-in-out;
-  background-color: ${(props: { isUser: any; }) => (props.isUser ? '#007bff' : '#f1f0f0')};
-  color: ${(props: { isUser: any; }) => (props.isUser ? 'white' : 'black')};
-  align-self: ${(props: { isUser: any; }) => (props.isUser ? 'flex-end' : 'flex-start')};
+  background-color: ${(props) => (props.isUser ? '#007bff' : '#f1f0f0')};
+  color: ${(props) => (props.isUser ? 'white' : 'black')};
+  align-self: ${(props) => (props.isUser ? 'flex-end' : 'flex-start')};
+  word-break: break-word;
+  overflow-wrap: break-word;
 `;
 
 const InputContainer = styled.div`
@@ -70,65 +79,151 @@ const Button = styled.button`
   }
 `;
 
+const SubjectList = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+`;
+
+const SubjectButton = styled.button<{ isActive: boolean }>`
+  padding: 10px 20px;
+  margin: 0 5px;
+  border: none;
+  background-color: ${(props) => (props.isActive ? '#007bff' : '#f1f0f0')};
+  color: ${(props) => (props.isActive ? 'white' : 'black')};
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #0056b3;
+    color: white;
+  }
+`;
+
 // Define the interface for ChatBubbleProps
 interface ChatBubbleProps {
   text: string;
   isUser: boolean;
+  sender: string;
 }
 
 // Define ChatBubble component with explicit prop types using the ChatBubbleProps interface
-const ChatBubble: React.FC<ChatBubbleProps> = ({ text, isUser }: ChatBubbleProps) => (
-  <ChatBubbleStyled isUser={isUser}>{text}</ChatBubbleStyled>
+const ChatBubble: React.FC<ChatBubbleProps> = ({ text, isUser, sender }) => (
+  <ChatBubbleStyled isUser={isUser}>
+    <strong>{sender}:</strong> {text}
+  </ChatBubbleStyled>
 );
 
 // Define the type for the message object
 interface Message {
   text: string;
   isUser: boolean;
+  sender: string;
+}
+
+// Define the type for the chat object
+interface Chat {
+  subject: string;
+  messages: Message[];
+}
+
+const mockFetchSubjectsAndChats = async () => {
+  // This function simulates fetching data from a database
+  return [
+    {
+      subject: 'Math',
+      messages: [
+        { text: 'Hello Math', isUser: true, sender: 'User' },
+        { text: 'Hi there!', isUser: false, sender: 'Bot' }
+      ]
+    },
+    {
+      subject: 'Science',
+      messages: [
+        { text: 'Hello Science', isUser: true, sender: 'User' },
+        { text: 'Hi there!', isUser: false, sender: 'Bot' }
+      ]
+    }
+  ];
 }
 
 export default function Calendar() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState<string>('');
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [currentInput, setCurrentInput] = useState<{ [key: string]: string }>({});
+  const [currentSubject, setCurrentSubject] = useState<string>('');
 
-  const handleSend = () => {
-    if (input.trim()) {
-      setMessages([...messages, { text: input, isUser: true }]);
-      setInput('');
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await mockFetchSubjectsAndChats();
+      setChats(data);
+      if (data.length > 0) {
+        setCurrentSubject(data[0].subject);
+      }
+    }
+    fetchData();
+  }, []);
 
-      // Simulate bot response
-      setTimeout(() => {
-        setMessages((prev: any) => [
-          ...prev,
-          { text: 'This is a bot response', isUser: false },
-        ]);
-      }, 1000);
+  const handleSend = (subject: string) => {
+    if (currentInput[subject]?.trim()) {
+      const newMessage = { text: currentInput[subject], isUser: true, sender: 'User' };
+      setChats(prevChats =>
+        prevChats.map(chat =>
+          chat.subject === subject
+            ? { ...chat, messages: [...chat.messages, newMessage] }
+            : chat
+        )
+      );
+      setCurrentInput(prevInput => ({ ...prevInput, [subject]: '' }));
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
+  const handleInputChange = (subject: string, value: string) => {
+    if (value.length <= 500) {
+      setCurrentInput(prevInput => ({ ...prevInput, [subject]: value }));
+    }
   };
+
+  const handleSubjectSelect = (subject: string) => {
+    setCurrentSubject(subject);
+  };
+
+  const currentChat = chats.find(chat => chat.subject === currentSubject);
 
   return (
     <>
       <Navbar />
-        <ChatContainer>
-          <Messages>
-            {messages.map((msg: { text: any; isUser: any; }, index: any) => (
-              <ChatBubble key={index} text={msg.text} isUser={msg.isUser} />
-            ))}
-          </Messages>
-          <InputContainer>
-            <Input
-              type="text"
-              value={input}
-              onChange={handleInputChange}
-              placeholder="Type a message"
-            />
-            <Button onClick={handleSend}>Send</Button>
-          </InputContainer>
-        </ChatContainer>
-    </>     
+      <SubjectList>
+        {chats.map(chat => (
+          <SubjectButton
+            key={chat.subject}
+            isActive={chat.subject === currentSubject}
+            onClick={() => handleSubjectSelect(chat.subject)}
+          >
+            {chat.subject}
+          </SubjectButton>
+        ))}
+      </SubjectList>
+      {currentChat && (
+        <Card>
+          <h3 style={{ textAlign: 'center' }}>{currentChat.subject}</h3>
+          <ChatContainer>
+            <Messages>
+              {currentChat.messages.map((msg, index) => (
+                <ChatBubble key={index} text={msg.text} isUser={msg.isUser} sender={msg.sender} />
+              ))}
+            </Messages>
+            <InputContainer>
+              <Input
+                type="text"
+                value={currentInput[currentChat.subject] || ''}
+                onChange={(e) => handleInputChange(currentChat.subject, e.target.value)}
+                placeholder="Type a message (max 500 chars)"
+              />
+              <Button onClick={() => handleSend(currentChat.subject)}>Send</Button>
+            </InputContainer>
+          </ChatContainer>
+        </Card>
+      )}
+    </>
   );
 }

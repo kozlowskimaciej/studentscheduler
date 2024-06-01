@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
         client_id="TQbmzC4s3FSSBLd5gWkq",
         client_secret="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
         api_base_url="https://apps.usos.pw.edu.pl/",
-        request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email",
+        request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email|studies",
         authorize_url="https://apps.usos.pw.edu.pl/services/oauth/authorize",
         access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
     )
@@ -72,15 +72,14 @@ def create_application() -> FastAPI:
     )
 
     # Set all CORS enabled origins
-    if settings.CORS_ORIGINS:
-        application.add_middleware(
-            CORSMiddleware,
-            allow_origins=[str(origin) for origin in settings.CORS_ORIGINS],
-            allow_origin_regex=settings.CORS_ORIGIN_REGEX,
-            allow_credentials=settings.CORS_CREDENTIALS,
-            allow_methods=settings.CORS_METHODS,
-            allow_headers=settings.CORS_HEADERS,
-        )
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
 
     # add defined routers
     application.include_router(api_router, prefix=settings.API_STR)

@@ -25,20 +25,13 @@ export default function LoginCard() {
   const [password, setPassword] = useState("");
   const [university, setUniversity] = useState("");
 
-  const handleLogin = async (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
+  const handleLoginWithUSOS = async () => {
     try {
-      const response = await axios.post("/login", {
-        login,
-        password,
-        university, // you might want to include this if needed on the backend
-      });
-      const token = response.data.token;
-      // Handle token storage, e.g., in localStorage or as a cookie
-      console.log("Logged in successfully", token);
+      const response = await axios.get("http://localhost:8080/api/v1/login");
+      console.log("Redirecting to USOS login:", response.data.redirect_uri);
+      window.location.href = response.data.redirect_uri;
     } catch (error) {
-      console.error("Error logging in", error);
-      // Handle login error, show a message to the user
+      console.error("Error initiating login with USOS", error);
     }
   };
 
@@ -58,7 +51,7 @@ export default function LoginCard() {
         <CardDescription>The only friend you can count on</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleLogin}>
+        <form>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="university">Choose your university</Label>
@@ -72,24 +65,6 @@ export default function LoginCard() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="login">Login</Label>
-              <Input
-                id="login"
-                type="text"
-                value={login}
-                onChange={(e) => setLogin(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
           </div>
           <Button type="submit" className="mt-4 w-full">
             Login
@@ -97,7 +72,7 @@ export default function LoginCard() {
         </form>
       </CardContent>
       <CardFooter className="flex justify-center items-center">
-        <Button className="gap-2">
+        <Button onClick={handleLoginWithUSOS} className="gap-2">
           <svg
             width="15"
             height="15"
