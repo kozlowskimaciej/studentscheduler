@@ -54,10 +54,11 @@ def parse_usos_data(usos_user: dict, usos_courses: dict) -> models.UserInfo:
     usos_user["index"] = usos_user.pop("student_number")
     usos_user["last_login"] = datetime.now()
 
+    current_term = max(usos_courses["course_editions"])
+
     usos_courses = [
         {"name": c["course_name"]["pl"], "code": c["course_id"]}
-        for cs in usos_courses["course_editions"].values()
-        for c in cs
+        for c in usos_courses["course_editions"][current_term]
     ]
 
     return models.UserInfo(user=usos_user, courses=usos_courses)
