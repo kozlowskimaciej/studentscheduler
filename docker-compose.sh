@@ -19,6 +19,22 @@ fi
 if [ "$env" != "dev" ] && [ "$env" != "test" ] && [ "$env" != "prod" ]; then
     echo "Invalid environment provided. Must be 'dev', 'test', or 'prod'."
     exit 1
+
+if [ "$command" = "debug" ]; then
+    echo "In debug mode."
+    env="dev"
+
+fi
+
+if [ -z "$env" ]; then
+    echo "No environment provided. Please provide a valid environment (dev, prod, test)."
+    echo "Usage: ./docker-compose.sh [command] [env]"
+    exit 1
+fi
+
+if [ "$env" != "dev" ] && [ "$env" != "test" ] && [ "$env" != "prod" ]; then
+    echo "Invalid environment provided. Must be 'dev', 'test', or 'prod'."
+    exit 1
 fi
 
 if [ ! -f "./.env.$env" ]; then
@@ -40,8 +56,11 @@ if [ "$command" = "down" ]; then
 elif [ "$command" = "run" ]; then
     if [ "$env" = "test" ]; then
         echo "STARTING TEST ENVIRONMENT"
-        $docker_command run --rm backend
+        $docker_command run --rm --service-ports backend
         $docker_command down -v
+    elif [ "$env" = "debug"]; then
+        echo "Running the database for debugging"
+        $docker_command run --rm --service-ports db
     else
         echo "STARTING DEV ENVIRONMENT"
         $docker_command up 
