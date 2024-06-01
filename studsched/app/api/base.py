@@ -1,22 +1,22 @@
 """Endpoints for getting version information."""
 
 import asyncio
-from typing import Any, Optional, Annotated
+from typing import Annotated, Any, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Request, status
 from fastapi.encoders import jsonable_encoder
-from sqlmodel import Session
-from sqlalchemy.orm.exc import NoResultFound
-from starlette.websockets import WebSocket, WebSocketDisconnect
 from jose import jwt
+from sqlalchemy.orm.exc import NoResultFound
+from sqlmodel import Session
+from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from ..chat.chat import create_chat_service, RedisChatService
+from ..chat.chat import RedisChatService, create_chat_service
 from ..chat.models.models import Channel, Message, MessageBase, MessageBody, UserBase
 from ..configs import get_settings
+from ..db.models import models
 from ..db.queries import queries
 from ..db.session import engine
 from ..version import __version__
-from ..db.models import models
 
 base_router = APIRouter()
 
@@ -51,8 +51,11 @@ def get_current_user(request: Request, db: DatabaseDep):
 
     try:
         token = request.cookies.get("token")
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ENCODE_ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.JWT_ENCODE_ALGORITHM]
+        )
         user_id: int = payload.get("id")
+        # user_id = 1
         if user_id is None:
             raise credentials_exception
     except Exception:
@@ -65,10 +68,6 @@ CurrentUserDep = Annotated[models.User, Depends(get_current_user)]
 
 @base_router.get("/subjects", response_model=list[models.Subject])
 async def subjects(user: CurrentUserDep):
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="No current user"
-        )
     return queries.get_subjects(user)
 
 
@@ -109,19 +108,6 @@ def chat_service(request: Request):
 ChatService = Annotated[RedisChatService, Depends(chat_service)]
 
 
-async def authenticated_user():
-    return UserBase(username="JakubStachowiak420")
-
-
-@base_router.get(
-    "/channels",
-    response_model=list[Channel],
-    dependencies=[Depends(authenticated_user)],
-)
-async def list_channels(chat: ChatService):
-    return await chat.get_channels()
-
-
 async def channel_from_slug(
     chat: ChatService, channel_slug: str = Path(...)
 ) -> Channel:
@@ -133,37 +119,68 @@ async def channel_from_slug(
     return channel
 
 
+@base_router.get(
+    "/channels",
+    response_model=list[Channel],
+)
+async def list_channels(chat: ChatService, db: DatabaseDep, user: CurrentUserDep):
+    courses = []
+    for s in await subjects(user):
+        course = db.get(models.Course, s.id)
+        try:
+            await channel_from_slug(course.id)
+        except Exception:
+            await chat.create_channel(slug=course.id, name=course.name)
+        courses.append({"slug": course.id, "name": course.name})
+
+    return courses
+
+
 @base_router.get("/channels/{channel_slug}/messages", response_model=list[Message])
 async def list_channel_messages(
     chat: ChatService,
+    user: CurrentUserDep,
     channel: Channel = Depends(channel_from_slug),
 ) -> list[Message]:
+    for s in await subjects(user):
+        if s.id == channel.slug:
+            break
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"user not authorized to access {channel.slug} channel",
+        )
+
     return list(await chat.get_messages(channel.slug))
 
 
 @base_router.post("/channels/{channel_slug}/messages", response_model=Message)
 async def create_channel_message(
     chat: ChatService,
-    user: UserBase = Depends(authenticated_user),
+    user: CurrentUserDep,
     channel: Channel = Depends(channel_from_slug),
     message: MessageBase = Body(...),
 ) -> MessageBase:
-    return await chat.send_message(channel.slug, user, message)
+    for s in await subjects(user):
+        if s.id == channel.slug:
+            break
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"user not authorized to access {channel.slug} channel",
+        )
 
-
-@base_router.post(
-    "/channels", response_model=Channel, dependencies=[Depends(authenticated_user)]
-)
-async def create_channel(chat: ChatService, channel: Channel = Body(...)):
-    return await chat.create_channel(slug=channel.slug, name=channel.name)
+    return await chat.send_message(
+        channel.slug, UserBase(username=f"{user.first_name} {user.last_name}"), message
+    )
 
 
 @base_router.websocket("/channels/{channel_slug}/messages_ws")
 async def channel_messages_ws(
     websocket: WebSocket,
     chat: ChatService,
+    user: CurrentUserDep,
     channel: Channel = Depends(channel_from_slug),
-    user: Optional[UserBase] = Depends(authenticated_user),
 ):
     if not user:
         return
@@ -171,13 +188,11 @@ async def channel_messages_ws(
         channel_slug=channel.slug, read_timeout=1
     ):
         if message is ...:
-            # No messages for some time, check if websocket is still active.
             try:
                 await asyncio.wait_for(websocket.receive_text(), timeout=0.1)
             except asyncio.TimeoutError:
                 continue
             except WebSocketDisconnect:
-                # Client disconnected
                 break
             else:
                 continue

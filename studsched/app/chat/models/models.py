@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class Channel(BaseModel):
     name: str = Field(min_length=1)
-    slug: str = Field(min_length=1)  # what is slug here? Answer: A slug is a short label for something, containing only letters, numbers, underscores or hyphens. They’re generally used in URLs. Alternative names for this: 
+    slug: int
 
     class Config:
         allow_mutation = False

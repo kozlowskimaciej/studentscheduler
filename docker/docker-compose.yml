@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_USER: "${POSTGRES_USER}"
     ports:
-      - "${DB_PORT}:${DB_PORT}"
+      - "${DB_PORT}:5432"
     expose:
       - "${DB_PORT}"
     volumes:
@@ -24,6 +24,9 @@ services:
     build:
       context: ../
       dockerfile: ./docker/Dockerfile.backend
+      args:
+        DB_CONNECTION: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_CONTAINER_NAME}:5432/${POSTGRES_DB}"
+        MODE: ${MODE}
     container_name: ${BACKEND_CONTAINER_NAME}
     entrypoint: >
       sh -c "sleep 5 && python ./studsched/main.py"
@@ -32,8 +35,8 @@ services:
     environment:
       - PYTHONPATH=/app/studsched
       - REDIS_URL=redis://redis
-      - SQLALCHEMY_DATABASE_URI="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_CONTAINER_NAME}:${DB_PORT}/${POSTGRES_DB}"
-      - MODE=${MODE}
+      # - SQLALCHEMY_DATABASE_URI="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_CONTAINER_NAME}:5432/${POSTGRES_DB}"
+      # - MODE=${MODE}
     ports:
       - "8080:8080"
     healthcheck:

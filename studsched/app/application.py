@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
         client_id="TQbmzC4s3FSSBLd5gWkq",
         client_secret="nhmmmJezLgkp6jk3LaF2nEtEvZFuKwWtN9FGwsqA",
         api_base_url="https://apps.usos.pw.edu.pl/",
-        request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email",
+        request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email|studies",
         authorize_url="https://apps.usos.pw.edu.pl/services/oauth/authorize",
         access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
     )
