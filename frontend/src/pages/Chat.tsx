@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import Navbar from "../components/common/Navbar";
+import axios from 'axios';
 
 // Define keyframes for animation
 const fadeIn = keyframes`
@@ -124,56 +125,92 @@ interface Message {
 // Define the type for the chat object
 interface Chat {
   subject: string;
+  slug: string;
   messages: Message[];
 }
 
-const mockFetchSubjectsAndChats = async () => {
-  // This function simulates fetching data from a database
-  return [
-    {
-      subject: 'Math',
-      messages: [
-        { text: 'Hello Math', isUser: true, sender: 'User' },
-        { text: 'Hi there!', isUser: false, sender: 'Bot' }
-      ]
-    },
-    {
-      subject: 'Science',
-      messages: [
-        { text: 'Hello Science', isUser: true, sender: 'User' },
-        { text: 'Hi there!', isUser: false, sender: 'Bot' }
-      ]
-    }
-  ];
-}
+const fetchChannels = async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/v1/channels', {
+      withCredentials: true
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to fetch channels');
+  }
+};
 
-export default function Calendar() {
+const fetchMessages = async (channelSlug: any) => {
+  try {
+    const response = await axios.get(`http://localhost:8080/api/v1/channels/${channelSlug}/messages`, {
+      withCredentials: true
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(`Failed to fetch messages for channel ${channelSlug}`);
+  }
+};
+
+export default function Chat() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentInput, setCurrentInput] = useState<{ [key: string]: string }>({});
   const [currentSubject, setCurrentSubject] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await mockFetchSubjectsAndChats();
-      setChats(data);
-      if (data.length > 0) {
-        setCurrentSubject(data[0].subject);
+      try {
+        const channels = await fetchChannels();
+        const chatsWithMessages = await Promise.all(
+          channels.map(async (channel: { slug: any; name: any; }) => {
+            const messages = await fetchMessages(channel.slug);
+            return {
+              subject: channel.name,
+              slug: channel.slug,
+              messages: messages.map((msg: any) => ({
+                text: msg.body.text,
+                isUser: msg.sender_username === 'Kacper Maj',
+                sender: msg.sender_username
+              }))
+            };
+          })
+        );
+        setChats(chatsWithMessages);
+        if (chatsWithMessages.length > 0) {
+          setCurrentSubject(chatsWithMessages[0].subject);
+        }
+      } catch (error) {
+        console.error('Error fetching channels and messages:', error);
       }
-    }
+    };
     fetchData();
   }, []);
 
-  const handleSend = (subject: string) => {
+  const handleSend = async (subject: string, slug: string) => {
     if (currentInput[subject]?.trim()) {
       const newMessage = { text: currentInput[subject], isUser: true, sender: 'User' };
-      setChats(prevChats =>
-        prevChats.map(chat =>
-          chat.subject === subject
-            ? { ...chat, messages: [...chat.messages, newMessage] }
-            : chat
-        )
-      );
-      setCurrentInput(prevInput => ({ ...prevInput, [subject]: '' }));
+
+      try {
+        const response = await axios.post(
+          `http://localhost:8080/api/v1/channels/${slug}/messages`,
+          { body: {text: currentInput[subject]} },
+          { withCredentials: true }
+        );
+
+        if (response.status === 200) {
+          const savedMessage = {
+            text: response.data.body.text,
+            isUser: response.data.sender_username === 'Kacper Maj',
+            sender: response.data.sender_username
+          };
+
+          setChats(prevChats =>
+            prevChats.map(chat => chat.slug === slug ? { ...chat, messages: [...chat.messages, savedMessage] } : chat)
+          );
+          setCurrentInput(prevInput => ({ ...prevInput, [subject]: '' }));
+        }
+      } catch (error) {
+        console.error('Error sending message:', error);
+      }
     }
   };
 
@@ -195,7 +232,7 @@ export default function Calendar() {
       <SubjectList>
         {chats.map(chat => (
           <SubjectButton
-            key={chat.subject}
+            key={chat.slug}
             isActive={chat.subject === currentSubject}
             onClick={() => handleSubjectSelect(chat.subject)}
           >
@@ -219,7 +256,7 @@ export default function Calendar() {
                 onChange={(e) => handleInputChange(currentChat.subject, e.target.value)}
                 placeholder="Type a message (max 500 chars)"
               />
-              <Button onClick={() => handleSend(currentChat.subject)}>Send</Button>
+              <Button onClick={() => handleSend(currentChat.subject, currentChat.slug)}>Send</Button>
             </InputContainer>
           </ChatContainer>
         </Card>
