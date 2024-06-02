@@ -4,6 +4,7 @@
 ```bash
 ./docker-compose.sh run ENV
 ```
+To
 
 Replace `ENV` with the name of the environment you want to use. Uses the settings in the .env.dev file and the `docker-compose.yml` configuration. The available environments are:
 - `dev`: For development.
@@ -13,6 +14,12 @@ For example, to start the application in the development environment, you would 
 ```bash
 ./docker-compose.sh run dev
 ```
+
+To use the app, first log in to USOS student account under
+`
+localhost:8080/api/v1/login
+`
+
 
 ## Testing the application
 ```bash
