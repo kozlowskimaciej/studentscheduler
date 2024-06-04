@@ -27,9 +27,7 @@ export default function LoginCard() {
 
   const handleLoginWithUSOS = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/v1/login");
-      console.log("Redirecting to USOS login:", response.data.redirect_uri);
-      window.location.href = response.data.redirect_uri;
+      window.location.replace("http://localhost:8080/api/v1/login");
     } catch (error) {
       console.error("Error initiating login with USOS", error);
     }

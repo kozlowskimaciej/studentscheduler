@@ -1,6 +1,6 @@
 from authlib.integrations.starlette_client.apps import StarletteOAuth1App
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from datetime import datetime, timedelta
 from typing import Annotated
 from jose import jwt
@@ -29,7 +29,9 @@ async def login(request: Request, usos: UsosDep):
     request.session.clear()
 
     redirect_uri = request.url_for("auth")
-    return await usos.authorize_redirect(request, redirect_uri)
+    sth = await usos.authorize_redirect(
+        request, redirect_uri)
+    return sth
 
 
 async def get_user_data(token, usos: StarletteOAuth1App) -> dict:
@@ -85,7 +87,7 @@ async def auth(request: Request, db: DatabaseDep, usos: UsosDep):
     token_data = {"id": db_user.id}
     jwt_token = create_jwt_token(token_data)
 
-    response = JSONResponse(content={"token": jwt_token})
+    response = RedirectResponse(url="http://localhost:3000/courses", status_code=307)
     response.set_cookie(
         key="token", value=jwt_token, httponly=True, secure=False, samesite="lax"
     )

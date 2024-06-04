@@ -72,7 +72,7 @@ elif [ "$command" = "flush"  ]; then
     fi
 elif [ "$command" = "debug" ]; then
     echo "Running the database for backend debugging"
-    $docker_command up db redis
+    $docker_command up db redis frontend
 else
     echo "Invalid command. Please provide a valid command (run, build, down, clean)."
     echo "Usage: ./docker-compose.sh [command] [env]"

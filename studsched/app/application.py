@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
         api_base_url="https://apps.usos.pw.edu.pl/",
         request_token_url="https://apps.usos.pw.edu.pl/services/oauth/request_token?scopes=email|studies",
         authorize_url="https://apps.usos.pw.edu.pl/services/oauth/authorize",
-        access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token",
+        access_token_url="https://apps.usos.pw.edu.pl/services/oauth/access_token"
     )
     app.oauth = oauth
     app.state.chat_service = create_chat_service(settings.REDIS_URL)

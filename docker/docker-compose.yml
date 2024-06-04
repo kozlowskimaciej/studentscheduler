@@ -57,8 +57,6 @@ services:
         REACT_PORT: "${REACT_PORT}"
     ports:
       - "${REACT_PORT}:${REACT_PORT}"
-    depends_on:
-      - backend
 
   redis:
     image: redis
